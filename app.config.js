@@ -3,6 +3,7 @@ module.exports = {
     name: "مصاريف",
     slug: "expense-tracker",
     version: "1.0.0",
+    owner: "abaelhacan",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "expense-tracker",
@@ -38,6 +39,11 @@ module.exports = {
     experiments: {
       typedRoutes: true,
       reactCompiler: true
+    },
+    extra: {
+      eas: {
+        projectId: "8f8e079e"
+      }
     }
   }
 };
