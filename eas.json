@@ -11,6 +11,10 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "YARN_OPTS": "--ignore-engines",
+        "NPM_CONFIG_IGNORE_ENGINES": "true"
       }
     },
     "production": {}
