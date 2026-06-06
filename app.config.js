@@ -1,7 +1,7 @@
 module.exports = {
   expo: {
     name: "مصاريف",
-    slug: "expense-tracker",
+    slug: "msaryf-",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
