@@ -1,6 +1,6 @@
 {
   "name": "@workspace/expense-tracker",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -9,19 +9,7 @@
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@expo-google-fonts/inter": "^0.4.0",
-    "@expo/cli": "54.0.23",
-    "@expo/ngrok": "^4.1.0",
-    "@expo/vector-icons": "^14.0.2",
-    "@react-native-async-storage/async-storage": "1.23.1",
-    "@stardazed/streams-text-encoding": "^1.0.2",
-    "@tanstack/react-query": "^5.0.0",
-    "@types/react": "~18.2.45",
-    "@types/react-dom": "~18.2.22",
-    "@ungap/structured-clone": "^1.2.0",
-    "babel-plugin-react-compiler": "^19.0.0-beta-e993439-20250117",
+  "dependencies": {
     "expo": "~51.0.27",
     "expo-blur": "~13.0.1",
     "expo-constants": "~16.0.2",
@@ -38,6 +26,8 @@
     "expo-status-bar": "~1.12.1",
     "expo-symbols": "~0.1.3",
     "expo-system-ui": "~3.0.7",
+    "expo-notifications": "~0.28.9",
+    "expo-sqlite": "~14.0.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.74.5",
@@ -49,12 +39,21 @@
     "react-native-svg": "15.3.0",
     "react-native-web": "~0.19.10",
     "react-native-worklets": "0.5.1",
-    "typescript": "~5.3.3",
+    "@expo-google-fonts/inter": "^0.4.0",
+    "@expo/vector-icons": "^14.0.2",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@tanstack/react-query": "^5.0.0",
     "zod": "^3.22.4",
     "zod-validation-error": "^3.4.0"
   },
-  "dependencies": {
-    "expo-notifications": "~0.28.9",
-    "expo-sqlite": "~14.0.3"
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@expo/cli": "54.0.23",
+    "@expo/ngrok": "^4.1.0",
+    "@stardazed/streams-text-encoding": "^1.0.2",
+    "@types/react": "~18.2.45",
+    "@types/react-dom": "~18.2.22",
+    "@ungap/structured-clone": "^1.2.0",
+    "typescript": "~5.3.3"
   }
 }
