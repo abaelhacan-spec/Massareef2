@@ -1,5 +1,4 @@
-{
-  "name": "@workspace/expense-tracker",
+"name": "@workspace/expense-tracker",
   "version": "0.0.0",
   "private": true,
   "main": "expo-router/entry",
