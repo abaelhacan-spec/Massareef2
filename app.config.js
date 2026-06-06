@@ -26,7 +26,6 @@ module.exports = {
     plugins: [
       ["expo-router", { origin: "https://replit.com/" }],
       "expo-font",
-      "expo-sqlite",
       [
         "expo-notifications",
         {
