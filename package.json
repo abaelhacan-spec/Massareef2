@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@expo/cli": "54.0.23",
     "@expo/ngrok": "^4.1.0",
     "@stardazed/streams-text-encoding": "^1.0.2",
     "@types/react": "~18.2.45",
