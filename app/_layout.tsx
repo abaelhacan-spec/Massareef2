@@ -15,6 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { initDB } from "@/lib/database";
+import { initNotifications } from "@/lib/notifications";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,6 +39,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     initDB().catch(() => {});
+    initNotifications().catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -62,3 +64,4 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+``
