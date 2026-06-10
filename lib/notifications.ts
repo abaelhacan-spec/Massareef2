@@ -1,8 +1,6 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
-const NOTIFICATION_ID = "daily-expense-reminder";
-
 export async function initNotifications(): Promise<void> {
   if (Platform.OS === "web") return;
 
@@ -11,6 +9,7 @@ export async function initNotifications(): Promise<void> {
       name: "تذكيرات المصاريف",
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#7C3AED",
       sound: "default",
       enableVibrate: true,
       showBadge: true,
@@ -23,29 +22,20 @@ export async function initNotifications(): Promise<void> {
   let finalStatus = existingStatus;
 
   if (existingStatus !== "granted") {
-    const { status } =
-      await Notifications.requestPermissionsAsync();
-
+    const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
 
   if (finalStatus !== "granted") return;
 
-  await Notifications
-    .cancelScheduledNotificationAsync(NOTIFICATION_ID)
-    .catch(() => {});
-
   await Notifications.scheduleNotificationAsync({
-    identifier: NOTIFICATION_ID,
     content: {
-      title: "تذكير بالمصاريف",
-      body: "لا تنس تسجيل مصروفات اليوم.",
+      title: "اختبار الإشعارات",
+      body: "إذا وصلتك هذه الرسالة فالنظام يعمل.",
       sound: true,
     },
     trigger: {
-      hour: 21,
-      minute: 0,
-      repeats: true,
+      seconds: 30,
     },
   });
 }
