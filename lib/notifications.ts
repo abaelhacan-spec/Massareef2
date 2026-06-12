@@ -28,14 +28,17 @@ export async function initNotifications(): Promise<void> {
 
   if (finalStatus !== "granted") return;
 
+  await Notifications.cancelAllScheduledNotificationsAsync();
+
+  const date = new Date();
+  date.setMinutes(date.getMinutes() + 3);
+
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "اختبار الإشعارات",
-      body: "إذا وصلتك هذه الرسالة فالنظام يعمل.",
+      title: "اختبار 3 دقائق",
+      body: "إذا وصل هذا الإشعار فجدولة التاريخ تعمل بشكل صحيح.",
       sound: true,
     },
-    trigger: {
-      seconds: 30,
-    },
+    trigger: date,
   });
 }
