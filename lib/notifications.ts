@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
 
 export async function initNotifications(): Promise<void> {
   if (Platform.OS === "web") return;
@@ -22,7 +22,9 @@ export async function initNotifications(): Promise<void> {
   let finalStatus = existingStatus;
 
   if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
+    const { status } =
+      await Notifications.requestPermissionsAsync();
+
     finalStatus = status;
   }
 
@@ -32,8 +34,8 @@ export async function initNotifications(): Promise<void> {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "تذكير بالمصاريف",
-      body: "لا تنس تسجيل مصروفات اليوم.",
+      title: "تذكير",
+      body: "لا تنس إضافة مصاريف اليوم",
       sound: true,
     },
     trigger: {
@@ -42,12 +44,4 @@ export async function initNotifications(): Promise<void> {
       repeats: true,
     },
   });
-
-  const scheduled =
-    await Notifications.getAllScheduledNotificationsAsync();
-
-  Alert.alert(
-    "فحص الإشعارات",
-    JSON.stringify(scheduled, null, 2)
-  );
 }
