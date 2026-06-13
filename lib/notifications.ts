@@ -1,6 +1,14 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 export async function initNotifications(): Promise<void> {
   if (Platform.OS === "web") return;
 
@@ -22,26 +30,30 @@ export async function initNotifications(): Promise<void> {
   let finalStatus = existingStatus;
 
   if (existingStatus !== "granted") {
-    const { status } =
-      await Notifications.requestPermissionsAsync();
-
+    const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
 
   if (finalStatus !== "granted") return;
 
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const alreadyScheduled = scheduled.some(
+    (n) => n.identifier === "daily-reminder"
+  );
+
+  if (alreadyScheduled) return;
 
   await Notifications.scheduleNotificationAsync({
+    identifier: "daily-reminder",
     content: {
-      title: "تذكير",
-      body: "لا تنس إضافة مصاريف اليوم",
+      title: "تذكير 💰",
+      body: "أخي، لا تنسَ تسجيل مصاريفك اليومية",
       sound: true,
     },
     trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour: 21,
       minute: 0,
-      repeats: true,
     },
   });
 }
