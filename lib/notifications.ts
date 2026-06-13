@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 
 export async function initNotifications(): Promise<void> {
   if (Platform.OS === "web") return;
@@ -30,15 +30,24 @@ export async function initNotifications(): Promise<void> {
 
   await Notifications.cancelAllScheduledNotificationsAsync();
 
-  const date = new Date();
-  date.setMinutes(date.getMinutes() + 3);
-
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "اختبار 3 دقائق",
-      body: "إذا وصل هذا الإشعار فجدولة التاريخ تعمل بشكل صحيح.",
+      title: "تذكير بالمصاريف",
+      body: "لا تنس تسجيل مصروفات اليوم.",
       sound: true,
     },
-    trigger: date,
+    trigger: {
+      hour: 21,
+      minute: 0,
+      repeats: true,
+    },
   });
+
+  const scheduled =
+    await Notifications.getAllScheduledNotificationsAsync();
+
+  Alert.alert(
+    "فحص الإشعارات",
+    JSON.stringify(scheduled, null, 2)
+  );
 }
