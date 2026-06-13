@@ -569,13 +569,6 @@ export default function HomeScreen() {
         })}
       </ScrollView>
 
-      {/* ── Reminder Banner (slides down from top) ── */}
-      <ReminderBanner
-        visible={bannerVisible}
-        onDismiss={dismissBanner}
-        colors={colors}
-      />
-
       {/* ── Edit Modal ── */}
       <Modal
         visible={modalVisible}
