@@ -561,8 +561,8 @@ export default function HomeScreen() {
               <View style={s.dayRight}>
                 <Feather name="edit-2" size={13} color={colors.mutedForeground} style={{ marginRight: 6 }} />
                 <Text style={[s.dayAmount, { color: amtColor }]}>
-                  {day.amount > 0 ? `${formatAmount(day.amount)} دج` : "—"}
-                </Text>
+  {`${formatAmount(day.amount)} دج`}
+</Text>>
               </View>
             </TouchableOpacity>
           );
