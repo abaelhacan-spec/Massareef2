@@ -24,9 +24,7 @@ export async function initNotifications(): Promise<void> {
     });
   }
 
-  const { status: existingStatus } =
-    await Notifications.getPermissionsAsync();
-
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
   if (existingStatus !== "granted") {
@@ -36,24 +34,19 @@ export async function initNotifications(): Promise<void> {
 
   if (finalStatus !== "granted") return;
 
-  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-  const alreadyScheduled = scheduled.some(
-    (n) => n.identifier === "daily-reminder"
-  );
-
-  if (alreadyScheduled) return;
+  await Notifications.cancelAllScheduledNotificationsAsync();
 
   await Notifications.scheduleNotificationAsync({
     identifier: "daily-reminder",
     content: {
-      title: "تذكير 💰",
-      body: "أخي، لا تنسَ تسجيل مصاريفك اليومية",
+      title: "تذكير",
+      body: "لا تنس إضافة مصاريف اليوم",
       sound: true,
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour: 21,
       minute: 0,
+      repeats: true,
     },
   });
 }
