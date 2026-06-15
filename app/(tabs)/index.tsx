@@ -18,9 +18,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-import {
+iimport {
   type Cycle,
   type DayExpense,
+  getCycleStartDay,
   getExpensesForCycle,
   getOrCreateCurrentCycle,
   upsertDayAmount,
@@ -168,8 +169,9 @@ export default function HomeScreen() {
   const todayStr = formatDate(today);
 
   const loadData = useCallback(async () => {
-    const startDate = getCycleStartDate(today);
-    const endDate = getCycleEndDate(startDate);
+    const cycleStartDay = await getCycleStartDay();
+    const startDate = getCycleStartDate(today, cycleStartDay);
+    const endDate = getCycleEndDate(startDate, cycleStartDay);
     const name = getCycleName(startDate);
     const startStr = formatDate(startDate);
     const endStr = formatDate(endDate);
