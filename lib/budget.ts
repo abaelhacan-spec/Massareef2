@@ -30,23 +30,24 @@ export function formatDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-export function getCycleStartDate(now: Date = new Date()): Date {
-  if (now.getDate() >= CYCLE_START_DAY) {
-    return new Date(now.getFullYear(), now.getMonth(), CYCLE_START_DAY);
+export function getCycleStartDate(now: Date = new Date(), startDay: number = CYCLE_START_DAY): Date {
+  if (now.getDate() >= startDay) {
+    return new Date(now.getFullYear(), now.getMonth(), startDay);
   }
   const prevMonth = now.getMonth() - 1;
   if (prevMonth < 0) {
-    return new Date(now.getFullYear() - 1, 11, CYCLE_START_DAY);
+    return new Date(now.getFullYear() - 1, 11, startDay);
   }
-  return new Date(now.getFullYear(), prevMonth, CYCLE_START_DAY);
+  return new Date(now.getFullYear(), prevMonth, startDay);
 }
 
-export function getCycleEndDate(startDate: Date): Date {
+export function getCycleEndDate(startDate: Date, startDay: number = CYCLE_START_DAY): Date {
   const nextMonth = startDate.getMonth() + 1;
+  const endDay = startDay > 1 ? startDay - 1 : 5;
   if (nextMonth > 11) {
-    return new Date(startDate.getFullYear() + 1, 0, 5);
+    return new Date(startDate.getFullYear() + 1, 0, endDay);
   }
-  return new Date(startDate.getFullYear(), nextMonth, 5);
+  return new Date(startDate.getFullYear(), nextMonth, endDay);
 }
 
 export function getCycleName(startDate: Date): string {
