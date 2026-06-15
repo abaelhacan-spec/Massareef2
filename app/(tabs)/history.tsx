@@ -62,6 +62,16 @@ export default function HistoryScreen() {
     return Math.round(n).toLocaleString("ar-DZ");
   }
 
+  function getCycleSummary(expenses: DayExpense[]) {
+    const total = expenses.reduce((sum, d) => sum + d.amount, 0);
+    const zeroDays = expenses.filter((d) => d.amount === 0).length;
+    let maxDay: DayExpense | null = null;
+    for (const d of expenses) {
+      if (!maxDay || d.amount > maxDay.amount) maxDay = d;
+    }
+    return { total, zeroDays, maxDay };
+  }
+
   const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     header: {
@@ -188,6 +198,19 @@ export default function HistoryScreen() {
       fontSize: 14,
       fontFamily: "Inter_400Regular",
     },
+    // Summary box
+    summaryBox: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 14,
+      gap: 8,
+    },
+    summaryItem: { flex: 1, alignItems: "center", gap: 4 },
+    summaryLabel: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "center" },
+    summaryValue: { fontSize: 14, fontFamily: "Inter_700Bold", textAlign: "center" },
+    summarySub: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1, textAlign: "center" },
   });
 
   return (
@@ -319,36 +342,75 @@ export default function HistoryScreen() {
             {loadingDetail ? (
               <Text style={[s.loadingText, { color: colors.mutedForeground }]}>جاري التحميل...</Text>
             ) : (
-              <ScrollView style={s.modalScroll} showsVerticalScrollIndicator={false}>
-                {selectedExpenses.map((day) => {
-                  const overDay = day.amount > DAILY_BUDGET;
-                  const amtColor =
-                    day.amount === 0
-                      ? colors.mutedForeground
-                      : overDay
-                      ? colors.destructive
-                      : colors.success;
-
+              <>
+                {(() => {
+                  const summary = getCycleSummary(selectedExpenses);
                   return (
-                    <View
-                      key={day.date}
-                      style={[s.dayRow, { backgroundColor: colors.secondary, borderColor: colors.border }]}
-                    >
-                      <View>
-                        <Text style={[s.dayName, { color: colors.foreground }]}>
-                          {getDayNameAr(day.date)}
+                    <View style={[s.summaryBox, { backgroundColor: colors.secondary }]}>
+                      <View style={s.summaryItem}>
+                        <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
+                          إجمالي المصروف
                         </Text>
-                        <Text style={[s.dayDate, { color: colors.mutedForeground }]}>
-                          {formatDateAr(day.date)}
+                        <Text style={[s.summaryValue, { color: colors.foreground }]}>
+                          {formatAmount(summary.total)} دج
                         </Text>
                       </View>
-                      <Text style={[s.dayAmount, { color: amtColor }]}>
-                        {formatAmount(day.amount)} دج
-                      </Text>
+                      <View style={s.summaryItem}>
+                        <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
+                          أعلى يوم صرف
+                        </Text>
+                        <Text style={[s.summaryValue, { color: colors.destructive }]}>
+                          {summary.maxDay ? formatAmount(summary.maxDay.amount) : "0"} دج
+                        </Text>
+                        {summary.maxDay && summary.maxDay.amount > 0 && (
+                          <Text style={[s.summarySub, { color: colors.mutedForeground }]}>
+                            {getDayNameAr(summary.maxDay.date)}
+                          </Text>
+                        )}
+                      </View>
+                      <View style={s.summaryItem}>
+                        <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
+                          أيام بدون صرف
+                        </Text>
+                        <Text style={[s.summaryValue, { color: colors.success }]}>
+                          {summary.zeroDays}
+                        </Text>
+                      </View>
                     </View>
                   );
-                })}
-              </ScrollView>
+                })()}
+
+                <ScrollView style={s.modalScroll} showsVerticalScrollIndicator={false}>
+                  {selectedExpenses.map((day) => {
+                    const overDay = day.amount > DAILY_BUDGET;
+                    const amtColor =
+                      day.amount === 0
+                        ? colors.mutedForeground
+                        : overDay
+                        ? colors.destructive
+                        : colors.success;
+
+                    return (
+                      <View
+                        key={day.date}
+                        style={[s.dayRow, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+                      >
+                        <View>
+                          <Text style={[s.dayName, { color: colors.foreground }]}>
+                            {getDayNameAr(day.date)}
+                          </Text>
+                          <Text style={[s.dayDate, { color: colors.mutedForeground }]}>
+                            {formatDateAr(day.date)}
+                          </Text>
+                        </View>
+                        <Text style={[s.dayAmount, { color: amtColor }]}>
+                          {formatAmount(day.amount)} دج
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              </>
             )}
 
             <TouchableOpacity
