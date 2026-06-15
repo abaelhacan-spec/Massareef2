@@ -44,6 +44,10 @@ export async function initDB(): Promise<void> {
       amount REAL DEFAULT 0.0,
       UNIQUE(cycle_id, date)
     );
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
 }
 
@@ -95,37 +99,4 @@ export async function getOrCreateCurrentCycle(
   return db.getFirstAsync<Cycle>(`SELECT * FROM cycles WHERE id = ?`, [cycleId]);
 }
 
-export async function getExpensesForCycle(cycleId: number): Promise<DayExpense[]> {
-  const db = await getDB();
-  if (!db) return [];
-  return db.getAllAsync<DayExpense>(
-    `SELECT * FROM expenses WHERE cycle_id = ? ORDER BY date ASC`,
-    [cycleId]
-  );
-}
-
-export async function upsertDayAmount(
-  cycleId: number,
-  date: string,
-  amount: number
-): Promise<void> {
-  const db = await getDB();
-  if (!db) return;
-  await db.runAsync(
-    `INSERT OR REPLACE INTO expenses (cycle_id, date, amount) VALUES (?, ?, ?)`,
-    [cycleId, date, amount]
-  );
-}
-
-export async function getAllCycles(): Promise<(Cycle & { total_spent: number })[]> {
-  const db = await getDB();
-  if (!db) return [];
-  return db.getAllAsync<Cycle & { total_spent: number }>(
-    `SELECT c.id, c.name, c.start_date, c.end_date, c.is_locked,
-            COALESCE(SUM(e.amount), 0) as total_spent
-     FROM cycles c
-     LEFT JOIN expenses e ON e.cycle_id = c.id
-     GROUP BY c.id
-     ORDER BY c.start_date DESC`
-  );
-}
+export async function get
