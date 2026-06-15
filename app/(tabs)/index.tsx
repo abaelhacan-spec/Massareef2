@@ -234,7 +234,7 @@ export default function HomeScreen() {
 
   async function saveAmount() {
     if (!selectedDay || !cycle) return;
-    const amount = parseFloat(inputAmount) || 0;
+    const amount = inputAmount.trim() === "" ? 0 : parseFloat(inputAmount) || 0;
     await upsertDayAmount(cycle.id, selectedDay.date, amount);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setModalVisible(false);
