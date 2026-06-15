@@ -20,7 +20,7 @@ module.exports = {
     },
 
     android: {
-      package: "com.hussein.masareef",
+      package: "com.hussein.masareef.dev",
       permissions: ["NOTIFICATIONS"]
     },
 
