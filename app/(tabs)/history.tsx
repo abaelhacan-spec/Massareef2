@@ -1,24 +1,32 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  Modal,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-import { type Cycle, getAllCycles } from "@/lib/database";
-import { TOTAL_BUDGET, formatDateAr } from "@/lib/budget";
+import { type Cycle, type DayExpense, getAllCycles, getExpensesForCycle } from "@/lib/database";
+import { DAILY_BUDGET, TOTAL_BUDGET, formatDateAr, getDayNameAr } from "@/lib/budget";
 
 export default function HistoryScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [cycles, setCycles] = useState<(Cycle & { total_spent: number })[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [selectedCycle, setSelectedCycle] = useState<(Cycle & { total_spent: number }) | null>(null);
+  const [selectedExpenses, setSelectedExpenses] = useState<DayExpense[]>([]);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const loadCycles = useCallback(async () => {
     const data = await getAllCycles();
@@ -34,6 +42,21 @@ export default function HistoryScreen() {
     await loadCycles();
     setRefreshing(false);
   }, [loadCycles]);
+
+  async function openCycleDetail(cycle: Cycle & { total_spent: number }) {
+    setSelectedCycle(cycle);
+    setDetailVisible(true);
+    setLoadingDetail(true);
+    const data = await getExpensesForCycle(cycle.id);
+    setSelectedExpenses(data);
+    setLoadingDetail(false);
+  }
+
+  function closeDetail() {
+    setDetailVisible(false);
+    setSelectedCycle(null);
+    setSelectedExpenses([]);
+  }
 
   function formatAmount(n: number): string {
     return Math.round(n).toLocaleString("ar-DZ");
@@ -102,6 +125,69 @@ export default function HistoryScreen() {
     stat: { alignItems: "flex-end" },
     statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
     statValue: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 2 },
+    tapHint: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+      marginTop: 10,
+      paddingTop: 10,
+      borderTopWidth: 1,
+    },
+    tapHintText: { fontSize: 11, fontFamily: "Inter_400Regular" },
+    // Modal styles
+    modalOverlay: { flex: 1, justifyContent: "flex-end" },
+    modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
+    modalSheet: {
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 12,
+      paddingHorizontal: 20,
+      maxHeight: "80%",
+    },
+    modalHandle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: "#CBD5E1",
+      alignSelf: "center",
+      marginBottom: 16,
+    },
+    modalHeader: { marginBottom: 12 },
+    modalTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "right" },
+    modalSubtitle: {
+      fontSize: 13,
+      fontFamily: "Inter_400Regular",
+      textAlign: "right",
+      marginTop: 2,
+    },
+    modalScroll: { maxHeight: 420 },
+    dayRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 10,
+      borderWidth: 1,
+      marginBottom: 6,
+    },
+    dayName: { fontSize: 14, fontFamily: "Inter_500Medium", textAlign: "right" },
+    dayDate: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1, textAlign: "right" },
+    dayAmount: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+    closeBtn: {
+      marginTop: 12,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    closeBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+    loadingText: {
+      textAlign: "center",
+      paddingVertical: 30,
+      fontSize: 14,
+      fontFamily: "Inter_400Regular",
+    },
   });
 
   return (
@@ -137,9 +223,11 @@ export default function HistoryScreen() {
           const isActive = index === 0 && cycle.is_locked === 0;
 
           return (
-            <View
+            <TouchableOpacity
               key={cycle.id}
               style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => openCycleDetail(cycle)}
+              activeOpacity={0.7}
             >
               <View style={s.cardTop}>
                 <Text style={[s.cycleTotal, { color: isOver ? colors.destructive : colors.foreground }]}>
@@ -188,10 +276,90 @@ export default function HistoryScreen() {
                   </Text>
                 </View>
               </View>
-            </View>
+
+              <View style={[s.tapHint, { borderTopColor: colors.border }]}>
+                <Feather name="list" size={12} color={colors.mutedForeground} />
+                <Text style={[s.tapHintText, { color: colors.mutedForeground }]}>
+                  اضغط لعرض التفاصيل اليومية
+                </Text>
+              </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>
+
+      {/* ── Cycle Detail Modal ── */}
+      <Modal
+        visible={detailVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeDetail}
+      >
+        <View style={s.modalOverlay}>
+          <Pressable style={s.modalBackdrop} onPress={closeDetail} />
+          <View
+            style={[
+              s.modalSheet,
+              { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 },
+            ]}
+          >
+            <View style={s.modalHandle} />
+
+            <View style={s.modalHeader}>
+              <Text style={[s.modalTitle, { color: colors.foreground }]}>
+                {selectedCycle?.name ?? ""}
+              </Text>
+              <Text style={[s.modalSubtitle, { color: colors.mutedForeground }]}>
+                {selectedCycle
+                  ? `${formatDateAr(selectedCycle.start_date)} – ${formatDateAr(selectedCycle.end_date)}`
+                  : ""}
+              </Text>
+            </View>
+
+            {loadingDetail ? (
+              <Text style={[s.loadingText, { color: colors.mutedForeground }]}>جاري التحميل...</Text>
+            ) : (
+              <ScrollView style={s.modalScroll} showsVerticalScrollIndicator={false}>
+                {selectedExpenses.map((day) => {
+                  const overDay = day.amount > DAILY_BUDGET;
+                  const amtColor =
+                    day.amount === 0
+                      ? colors.mutedForeground
+                      : overDay
+                      ? colors.destructive
+                      : colors.success;
+
+                  return (
+                    <View
+                      key={day.date}
+                      style={[s.dayRow, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+                    >
+                      <View>
+                        <Text style={[s.dayName, { color: colors.foreground }]}>
+                          {getDayNameAr(day.date)}
+                        </Text>
+                        <Text style={[s.dayDate, { color: colors.mutedForeground }]}>
+                          {formatDateAr(day.date)}
+                        </Text>
+                      </View>
+                      <Text style={[s.dayAmount, { color: amtColor }]}>
+                        {formatAmount(day.amount)} دج
+                      </Text>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              style={[s.closeBtn, { backgroundColor: colors.secondary }]}
+              onPress={closeDetail}
+            >
+              <Text style={[s.closeBtnText, { color: colors.foreground }]}>إغلاق</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
