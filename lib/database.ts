@@ -24,6 +24,7 @@ export interface DayExpense {
   cycle_id: number;
   date: string;
   amount: number;
+  is_entered: number; // 0 = لم يُدخل بعد، 1 = أُدخل
 }
 
 export async function initDB(): Promise<void> {
@@ -42,6 +43,7 @@ export async function initDB(): Promise<void> {
       cycle_id INTEGER NOT NULL,
       date TEXT NOT NULL,
       amount REAL DEFAULT 0.0,
+      is_entered INTEGER DEFAULT 0,
       UNIQUE(cycle_id, date)
     );
     CREATE TABLE IF NOT EXISTS app_settings (
@@ -49,6 +51,13 @@ export async function initDB(): Promise<void> {
       value TEXT NOT NULL
     );
   `);
+
+  // Migration للنسخ القديمة المثبتة مسبقاً
+  try {
+    await db.execAsync(`ALTER TABLE expenses ADD COLUMN is_entered INTEGER DEFAULT 0`);
+  } catch (_) {
+    // العمود موجود مسبقاً، تجاهل الخطأ
+  }
 }
 
 function formatDateLocal(date: Date): string {
@@ -90,7 +99,7 @@ export async function getOrCreateCurrentCycle(
   while (curr <= end) {
     const dateStr = formatDateLocal(curr);
     await db.runAsync(
-      `INSERT OR IGNORE INTO expenses (cycle_id, date, amount) VALUES (?, ?, 0.0)`,
+      `INSERT OR IGNORE INTO expenses (cycle_id, date, amount, is_entered) VALUES (?, ?, 0.0, 0)`,
       [cycleId, dateStr]
     );
     curr.setDate(curr.getDate() + 1);
@@ -116,7 +125,7 @@ export async function upsertDayAmount(
   const db = await getDB();
   if (!db) return;
   await db.runAsync(
-    `INSERT OR REPLACE INTO expenses (cycle_id, date, amount) VALUES (?, ?, ?)`,
+    `INSERT OR REPLACE INTO expenses (cycle_id, date, amount, is_entered) VALUES (?, ?, ?, 1)`,
     [cycleId, date, amount]
   );
 }
