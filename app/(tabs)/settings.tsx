@@ -1,15 +1,26 @@
 import { Feather } from "@expo/vector-icons";
-import React from "react";
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { getCycleStartDay, setCycleStartDay } from "@/lib/database";
 
 type SettingItem = {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   value?: string;
   comingSoon?: boolean;
+  onPress?: () => void;
 };
 
 type SettingSection = {
@@ -17,40 +28,63 @@ type SettingSection = {
   items: SettingItem[];
 };
 
-const SECTIONS: SettingSection[] = [
-  {
-    title: "الميزانية",
-    items: [
-      { icon: "calendar", label: "سقف الإنفاق اليومي", value: "1,000 دج", comingSoon: true },
-      { icon: "pie-chart", label: "سقف الإنفاق الشهري", value: "30,000 دج", comingSoon: true },
-      { icon: "rotate-cw", label: "يوم بداية الدورة", value: "6", comingSoon: true },
-    ],
-  },
-  {
-    title: "العملة واللغة",
-    items: [
-      { icon: "dollar-sign", label: "العملة", value: "دج (DZD)", comingSoon: true },
-      { icon: "globe", label: "اللغة", value: "العربية", comingSoon: true },
-    ],
-  },
-  {
-    title: "الإشعارات",
-    items: [
-      { icon: "bell", label: "وقت التذكير اليومي", value: "21:00", comingSoon: true },
-    ],
-  },
-  {
-    title: "البيانات",
-    items: [
-      { icon: "upload", label: "نسخ احتياطي", comingSoon: true },
-      { icon: "download", label: "استعادة من نسخة احتياطية", comingSoon: true },
-    ],
-  },
-];
+const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
 
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+
+  const [cycleStartDay, setCycleStartDayState] = useState<number>(6);
+  const [pickerVisible, setPickerVisible] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const day = await getCycleStartDay();
+      setCycleStartDayState(day);
+    })();
+  }, []);
+
+  async function chooseDay(day: number) {
+    await setCycleStartDay(day);
+    setCycleStartDayState(day);
+    setPickerVisible(false);
+  }
+
+  const SECTIONS: SettingSection[] = [
+    {
+      title: "الميزانية",
+      items: [
+        { icon: "calendar", label: "سقف الإنفاق اليومي", value: "1,000 دج", comingSoon: true },
+        { icon: "pie-chart", label: "سقف الإنفاق الشهري", value: "30,000 دج", comingSoon: true },
+        {
+          icon: "rotate-cw",
+          label: "يوم بداية الدورة",
+          value: String(cycleStartDay),
+          onPress: () => setPickerVisible(true),
+        },
+      ],
+    },
+    {
+      title: "العملة واللغة",
+      items: [
+        { icon: "dollar-sign", label: "العملة", value: "دج (DZD)", comingSoon: true },
+        { icon: "globe", label: "اللغة", value: "العربية", comingSoon: true },
+      ],
+    },
+    {
+      title: "الإشعارات",
+      items: [
+        { icon: "bell", label: "وقت التذكير اليومي", value: "21:00", comingSoon: true },
+      ],
+    },
+    {
+      title: "البيانات",
+      items: [
+        { icon: "upload", label: "نسخ احتياطي", comingSoon: true },
+        { icon: "download", label: "استعادة من نسخة احتياطية", comingSoon: true },
+      ],
+    },
+  ];
 
   const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
@@ -151,6 +185,54 @@ export default function SettingsScreen() {
       fontSize: 11,
       fontFamily: "Inter_400Regular",
     },
+    modalOverlay: { flex: 1, justifyContent: "flex-end" },
+    modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
+    modalSheet: {
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: 12,
+      paddingHorizontal: 20,
+      maxHeight: "75%",
+    },
+    modalHandle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: "#CBD5E1",
+      alignSelf: "center",
+      marginBottom: 16,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontFamily: "Inter_700Bold",
+      textAlign: "right",
+      marginBottom: 4,
+    },
+    modalNote: {
+      fontSize: 12,
+      fontFamily: "Inter_400Regular",
+      textAlign: "right",
+      marginBottom: 14,
+    },
+    daysGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "flex-end",
+      gap: 8,
+      paddingBottom: 20,
+    },
+    dayChip: {
+      width: 48,
+      height: 48,
+      borderRadius: 12,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    dayChipText: {
+      fontSize: 15,
+      fontFamily: "Inter_600SemiBold",
+    },
   });
 
   return (
@@ -178,6 +260,7 @@ export default function SettingsScreen() {
                   ]}
                   activeOpacity={item.comingSoon ? 1 : 0.6}
                   disabled={item.comingSoon}
+                  onPress={item.onPress}
                 >
                   <View style={s.rowRight}>
                     {item.comingSoon ? (
@@ -209,6 +292,60 @@ export default function SettingsScreen() {
           <Text style={[s.footerVersion, { color: colors.mutedForeground }]}>الإصدار 1.0</Text>
         </View>
       </ScrollView>
+
+      {/* ── Cycle Start Day Picker ── */}
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <View style={s.modalOverlay}>
+          <Pressable style={s.modalBackdrop} onPress={() => setPickerVisible(false)} />
+          <View
+            style={[
+              s.modalSheet,
+              { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 },
+            ]}
+          >
+            <View style={s.modalHandle} />
+            <Text style={[s.modalTitle, { color: colors.foreground }]}>يوم بداية الدورة</Text>
+            <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
+              سيُطبَّق هذا التغيير على الدورة القادمة فقط، ولن يؤثر على الدورة الحالية.
+            </Text>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={s.daysGrid}>
+                {DAY_OPTIONS.map((day) => {
+                  const selected = day === cycleStartDay;
+                  return (
+                    <TouchableOpacity
+                      key={day}
+                      style={[
+                        s.dayChip,
+                        {
+                          borderColor: selected ? colors.primary : colors.border,
+                          backgroundColor: selected ? colors.primary : colors.secondary,
+                        },
+                      ]}
+                      onPress={() => chooseDay(day)}
+                    >
+                      <Text
+                        style={[
+                          s.dayChipText,
+                          { color: selected ? colors.primaryForeground : colors.foreground },
+                        ]}
+                      >
+                        {day}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
