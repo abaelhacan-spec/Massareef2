@@ -96,7 +96,4 @@ export async function getOrCreateCurrentCycle(
     curr.setDate(curr.getDate() + 1);
   }
 
-  return db.getFirstAsync<Cycle>(`SELECT * FROM cycles WHERE id = ?`, [cycleId]);
-}
-
-export async function get
+  return db.getFirstAsync<Cycle>(`SELECT
