@@ -525,11 +525,11 @@ export default function HomeScreen() {
           const todayFlag = isToday(day.date);
           const overDay = day.amount > DAILY_BUDGET;
           const amtColor =
-            day.amount === 0
-              ? colors.mutedForeground
-              : overDay
-              ? colors.destructive
-              : colors.success;
+    overDay
+      ? colors.destructive
+      : day.amount === 0
+      ? colors.foreground
+      : colors.success;
           const rowBg = todayFlag ? (isDark ? "#1A2D44" : "#EFF6FF") : colors.card;
 
           return (
