@@ -230,7 +230,7 @@ export default function HomeScreen() {
   function openDayModal(day: DayExpense) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedDay(day);
-    setInputAmount(day.amount > 0 ? String(day.amount) : "");
+  setInputAmount(day.is_entered && day.amount > 0 ? String(day.amount) : "");  
     setModalVisible(true);
   }
 
@@ -523,9 +523,11 @@ export default function HomeScreen() {
 
         {expenses.map((day) => {
           const todayFlag = isToday(day.date);
-          const overDay = day.amount > DAILY_BUDGET;
+          const overDay = !!day.is_entered && day.amount > DAILY_BUDGET; 
           const amtColor =
-    overDay
+    !day.is_entered
+      ? colors.mutedForeground
+      : overDay
       ? colors.destructive
       : day.amount === 0
       ? colors.foreground
@@ -558,13 +560,13 @@ export default function HomeScreen() {
                     {formatDateAr(day.date)}
                   </Text>
                 </View>
-                <View style={[s.dayDot, { backgroundColor: day.amount > 0 ? amtColor : colors.border }]} />
+                <View style={[s.dayDot, {backgroundColor: day.is_entered && day.amount > 0 ? amtColor : colors.border }]} />
               </View>
               <View style={s.dayRight}>
                 <Feather name="edit-2" size={13} color={colors.mutedForeground} style={{ marginRight: 6 }} />
                 <Text style={[s.dayAmount, { color: amtColor }]}>
-  {`${formatAmount(day.amount)} دج`}
-</Text>
+                 {day.is_entered ? `${formatAmount(day.amount)} دج` : "— دج"}
+             </Text>
               </View>
             </TouchableOpacity>
           );
