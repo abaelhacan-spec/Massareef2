@@ -18,7 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-iimport {
+import {
   type Cycle,
   type DayExpense,
   getCycleStartDay,
