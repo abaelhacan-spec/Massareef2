@@ -83,6 +83,42 @@ export async function getOrCreateCurrentCycle(
     [cycleName, startStr, endStr]
   );
   const cycleId = result.lastInsertRowId;
+  export async function getAllCycles(): Promise<(Cycle & { total_spent: number })[]> {
+  const db = await getDB();
+  if (!db) return [];
+  return db.getAllAsync<Cycle & { total_spent: number }>(
+    `SELECT c.id, c.name, c.start_date, c.end_date, c.is_locked,
+            COALESCE(SUM(e.amount), 0) as total_spent
+     FROM cycles c
+     LEFT JOIN expenses e ON e.cycle_id = c.id
+     GROUP BY c.id
+     ORDER BY c.start_date DESC`
+  );
+}
+
+const DEFAULT_CYCLE_START_DAY = 6;
+
+export async function getCycleStartDay(): Promise<number> {
+  const db = await getDB();
+  if (!db) return DEFAULT_CYCLE_START_DAY;
+  const row = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_settings WHERE key = 'cycle_start_day'`
+  );
+  if (!row) return DEFAULT_CYCLE_START_DAY;
+  const parsed = parseInt(row.value, 10);
+  if (isNaN(parsed) || parsed < 1 || parsed > 28) return DEFAULT_CYCLE_START_DAY;
+  return parsed;
+}
+
+export async function setCycleStartDay(day: number): Promise<void> {
+  const db = await getDB();
+  if (!db) return;
+  const safeDay = Math.min(28, Math.max(1, Math.round(day)));
+  await db.runAsync(
+    `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('cycle_start_day', ?)`,
+    [String(safeDay)]
+  );
+}
 
   const start = new Date(startStr + "T00:00:00");
   const end = new Date(endStr + "T00:00:00");
