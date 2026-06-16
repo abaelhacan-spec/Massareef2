@@ -83,7 +83,45 @@ export async function getOrCreateCurrentCycle(
     [cycleName, startStr, endStr]
   );
   const cycleId = result.lastInsertRowId;
-  export async function getAllCycles(): Promise<(Cycle & { total_spent: number })[]> {
+
+  const start = new Date(startStr + "T00:00:00");
+  const end = new Date(endStr + "T00:00:00");
+  const curr = new Date(start);
+  while (curr <= end) {
+    const dateStr = formatDateLocal(curr);
+    await db.runAsync(
+      `INSERT OR IGNORE INTO expenses (cycle_id, date, amount) VALUES (?, ?, 0.0)`,
+      [cycleId, dateStr]
+    );
+    curr.setDate(curr.getDate() + 1);
+  }
+
+  return db.getFirstAsync<Cycle>(`SELECT * FROM cycles WHERE id = ?`, [cycleId]);
+}
+
+export async function getExpensesForCycle(cycleId: number): Promise<DayExpense[]> {
+  const db = await getDB();
+  if (!db) return [];
+  return db.getAllAsync<DayExpense>(
+    `SELECT * FROM expenses WHERE cycle_id = ? ORDER BY date ASC`,
+    [cycleId]
+  );
+}
+
+export async function upsertDayAmount(
+  cycleId: number,
+  date: string,
+  amount: number
+): Promise<void> {
+  const db = await getDB();
+  if (!db) return;
+  await db.runAsync(
+    `INSERT OR REPLACE INTO expenses (cycle_id, date, amount) VALUES (?, ?, ?)`,
+    [cycleId, date, amount]
+  );
+}
+
+export async function getAllCycles(): Promise<(Cycle & { total_spent: number })[]> {
   const db = await getDB();
   if (!db) return [];
   return db.getAllAsync<Cycle & { total_spent: number }>(
@@ -119,17 +157,3 @@ export async function setCycleStartDay(day: number): Promise<void> {
     [String(safeDay)]
   );
 }
-
-  const start = new Date(startStr + "T00:00:00");
-  const end = new Date(endStr + "T00:00:00");
-  const curr = new Date(start);
-  while (curr <= end) {
-    const dateStr = formatDateLocal(curr);
-    await db.runAsync(
-      `INSERT OR IGNORE INTO expenses (cycle_id, date, amount) VALUES (?, ?, 0.0)`,
-      [cycleId, dateStr]
-    );
-    curr.setDate(curr.getDate() + 1);
-  }
-
-  return db.getFirstAsync<Cycle>(`SELECT
