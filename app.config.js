@@ -21,7 +21,11 @@ module.exports = {
 
     android: {
       package: "com.hussein.masareef.dev",
-      permissions: ["NOTIFICATIONS"]
+      permissions: [
+        "NOTIFICATIONS",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
     },
 
     web: {
@@ -38,7 +42,8 @@ module.exports = {
           color: "#0B1120",
           defaultChannel: "default"
         }
-      ]
+      ],
+      "expo-local-authentication"
     ],
 
     experiments: {
