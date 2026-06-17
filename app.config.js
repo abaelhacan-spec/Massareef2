@@ -1,7 +1,7 @@
 module.exports = {
   expo: {
     name: "مصاريف",
-    slug: "msaryf-",
+    slug: "massareef2-",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
