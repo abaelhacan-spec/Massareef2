@@ -52,12 +52,9 @@ export async function initDB(): Promise<void> {
     );
   `);
 
-  // Migration للنسخ القديمة المثبتة مسبقاً
   try {
     await db.execAsync(`ALTER TABLE expenses ADD COLUMN is_entered INTEGER DEFAULT 0`);
-  } catch (_) {
-    // العمود موجود مسبقاً، تجاهل الخطأ
-  }
+  } catch (_) {}
 }
 
 function formatDateLocal(date: Date): string {
@@ -164,7 +161,10 @@ export async function setCycleStartDay(day: number): Promise<void> {
   await db.runAsync(
     `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('cycle_start_day', ?)`,
     [String(safeDay)]
- export async function getAppLockEnabled(): Promise<boolean> {
+  );
+}
+
+export async function getAppLockEnabled(): Promise<boolean> {
   const db = await getDB();
   if (!db) return false;
   const row = await db.getFirstAsync<{ value: string }>(
@@ -180,4 +180,4 @@ export async function setAppLockEnabled(enabled: boolean): Promise<void> {
     `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('app_lock_enabled', ?)`,
     [enabled ? "1" : "0"]
   );
-} 
+}
