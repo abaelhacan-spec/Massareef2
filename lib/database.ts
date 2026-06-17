@@ -164,5 +164,20 @@ export async function setCycleStartDay(day: number): Promise<void> {
   await db.runAsync(
     `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('cycle_start_day', ?)`,
     [String(safeDay)]
+ export async function getAppLockEnabled(): Promise<boolean> {
+  const db = await getDB();
+  if (!db) return false;
+  const row = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_settings WHERE key = 'app_lock_enabled'`
   );
+  return row?.value === "1";
 }
+
+export async function setAppLockEnabled(enabled: boolean): Promise<void> {
+  const db = await getDB();
+  if (!db) return;
+  await db.runAsync(
+    `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('app_lock_enabled', ?)`,
+    [enabled ? "1" : "0"]
+  );
+} 
