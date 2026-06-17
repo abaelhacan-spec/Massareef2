@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -13,20 +14,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-import { getCycleStartDay, setCycleStartDay } from "@/lib/database";
-
-type SettingItem = {
-  icon: keyof typeof Feather.glyphMap;
-  label: string;
-  value?: string;
-  comingSoon?: boolean;
-  onPress?: () => void;
-};
-
-type SettingSection = {
-  title: string;
-  items: SettingItem[];
-};
+import {
+  getAppLockEnabled,
+  getCycleStartDay,
+  setAppLockEnabled,
+  setCycleStartDay,
+} from "@/lib/database";
 
 const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
 
@@ -36,11 +29,14 @@ export default function SettingsScreen() {
 
   const [cycleStartDay, setCycleStartDayState] = useState<number>(6);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [appLockEnabled, setAppLockEnabledState] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
       const day = await getCycleStartDay();
       setCycleStartDayState(day);
+      const lock = await getAppLockEnabled();
+      setAppLockEnabledState(lock);
     })();
   }, []);
 
@@ -50,41 +46,10 @@ export default function SettingsScreen() {
     setPickerVisible(false);
   }
 
-  const SECTIONS: SettingSection[] = [
-    {
-      title: "الميزانية",
-      items: [
-        { icon: "calendar", label: "سقف الإنفاق اليومي", value: "1,000 دج", comingSoon: true },
-        { icon: "pie-chart", label: "سقف الإنفاق الشهري", value: "30,000 دج", comingSoon: true },
-        {
-          icon: "rotate-cw",
-          label: "يوم بداية الدورة",
-          value: String(cycleStartDay),
-          onPress: () => setPickerVisible(true),
-        },
-      ],
-    },
-    {
-      title: "العملة واللغة",
-      items: [
-        { icon: "dollar-sign", label: "العملة", value: "دج (DZD)", comingSoon: true },
-        { icon: "globe", label: "اللغة", value: "العربية", comingSoon: true },
-      ],
-    },
-    {
-      title: "الإشعارات",
-      items: [
-        { icon: "bell", label: "وقت التذكير اليومي", value: "21:00", comingSoon: true },
-      ],
-    },
-    {
-      title: "البيانات",
-      items: [
-        { icon: "upload", label: "نسخ احتياطي", comingSoon: true },
-        { icon: "download", label: "استعادة من نسخة احتياطية", comingSoon: true },
-      ],
-    },
-  ];
+  async function toggleAppLock(value: boolean) {
+    await setAppLockEnabled(value);
+    setAppLockEnabledState(value);
+  }
 
   const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
@@ -247,49 +212,164 @@ export default function SettingsScreen() {
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        {SECTIONS.map((section) => (
-          <View key={section.title}>
-            <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>{section.title}</Text>
-            <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              {section.items.map((item, idx) => (
-                <TouchableOpacity
-                  key={item.label}
-                  style={[
-                    s.row,
-                    idx > 0 && [s.rowBorder, { borderTopColor: colors.border }],
-                  ]}
-                  activeOpacity={item.comingSoon ? 1 : 0.6}
-                  disabled={item.comingSoon}
-                  onPress={item.onPress}
-                >
-                  <View style={s.rowRight}>
-                    {item.comingSoon ? (
-                      <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                        <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
-                      </View>
-                    ) : (
-                      <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
-                    )}
-                    {item.value && (
-                      <Text style={[s.rowValue, { color: colors.mutedForeground }]}>{item.value}</Text>
-                    )}
-                  </View>
+        {/* ── الميزانية ── */}
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>الميزانية</Text>
+        <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity style={s.row} activeOpacity={1} disabled>
+            <View style={s.rowRight}>
+              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+              </View>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>1,000 دج</Text>
+            </View>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>سقف الإنفاق اليومي</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="calendar" size={16} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
 
-                  <View style={s.rowLeft}>
-                    <Text style={[s.rowLabel, { color: colors.foreground }]}>{item.label}</Text>
-                    <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
-                      <Feather name={item.icon} size={16} color={colors.primary} />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
+          <TouchableOpacity style={[s.row, s.rowBorder, { borderTopColor: colors.border }]} activeOpacity={1} disabled>
+            <View style={s.rowRight}>
+              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+              </View>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>30,000 دج</Text>
+            </View>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>سقف الإنفاق الشهري</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="pie-chart" size={16} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[s.row, s.rowBorder, { borderTopColor: colors.border }]}
+            activeOpacity={0.6}
+            onPress={() => setPickerVisible(true)}
+          >
+            <View style={s.rowRight}>
+              <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>{cycleStartDay}</Text>
+            </View>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>يوم بداية الدورة</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="rotate-cw" size={16} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── العملة واللغة ── */}
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>العملة واللغة</Text>
+        <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity style={s.row} activeOpacity={1} disabled>
+            <View style={s.rowRight}>
+              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+              </View>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>دج (DZD)</Text>
+            </View>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>العملة</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="dollar-sign" size={16} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[s.row, s.rowBorder, { borderTopColor: colors.border }]} activeOpacity={1} disabled>
+            <View style={s.rowRight}>
+              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+              </View>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>العربية</Text>
+            </View>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>اللغة</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="globe" size={16} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── الأمان ── */}
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>الأمان</Text>
+        <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={s.row}>
+            <Switch
+              value={appLockEnabled}
+              onValueChange={toggleAppLock}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.primaryForeground}
+            />
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>قفل التطبيق</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="lock" size={16} color={colors.primary} />
+              </View>
             </View>
           </View>
-        ))}
+        </View>
+
+        {/* ── الإشعارات ── */}
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>الإشعارات</Text>
+        <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity style={s.row} activeOpacity={1} disabled>
+            <View style={s.rowRight}>
+              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+              </View>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>21:00</Text>
+            </View>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>وقت التذكير اليومي</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="bell" size={16} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── البيانات ── */}
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>البيانات</Text>
+        <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity style={s.row} activeOpacity={1} disabled>
+            <View style={s.rowRight}>
+              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+              </View>
+            </View>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>نسخ احتياطي</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="upload" size={16} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[s.row, s.rowBorder, { borderTopColor: colors.border }]} activeOpacity={1} disabled>
+            <View style={s.rowRight}>
+              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+              </View>
+            </View>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>استعادة من نسخة احتياطية</Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="download" size={16} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
 
         <View style={s.footer}>
           <Text style={[s.footerText, { color: colors.mutedForeground }]}>مصاريف</Text>
-          <Text style={[s.footerVersion, { color: colors.mutedForeground }]}>الإصدار 1.0</Text>
+          <Text style={[s.footerVersion, { color: colors.mutedForeground }]}>الإصدار 2.0</Text>
         </View>
       </ScrollView>
 
@@ -313,7 +393,6 @@ export default function SettingsScreen() {
             <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
               سيُطبَّق هذا التغيير على الدورة القادمة فقط، ولن يؤثر على الدورة الحالية.
             </Text>
-
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={s.daysGrid}>
                 {DAY_OPTIONS.map((day) => {
