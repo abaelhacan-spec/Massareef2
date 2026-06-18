@@ -1,6 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -8,6 +10,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -17,8 +20,12 @@ import { useColors } from "@/hooks/useColors";
 import {
   getAppLockEnabled,
   getCycleStartDay,
+  getDailyBudget,
+  getMonthlyBudget,
   setAppLockEnabled,
   setCycleStartDay,
+  setDailyBudget,
+  setMonthlyBudget,
 } from "@/lib/database";
 
 const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
@@ -30,6 +37,12 @@ export default function SettingsScreen() {
   const [cycleStartDay, setCycleStartDayState] = useState<number>(6);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [appLockEnabled, setAppLockEnabledState] = useState<boolean>(false);
+  const [dailyBudget, setDailyBudgetState] = useState<number>(0);
+  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
+  const [budgetModalVisible, setBudgetModalVisible] = useState(false);
+  const [dailyInput, setDailyInput] = useState("");
+  const [monthlyInput, setMonthlyInput] = useState("");
+  const [monthlyEditedManually, setMonthlyEditedManually] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -37,6 +50,10 @@ export default function SettingsScreen() {
       setCycleStartDayState(day);
       const lock = await getAppLockEnabled();
       setAppLockEnabledState(lock);
+      const daily = await getDailyBudget();
+      const monthly = await getMonthlyBudget();
+      setDailyBudgetState(daily);
+      setMonthlyBudgetState(monthly);
     })();
   }, []);
 
@@ -49,6 +66,49 @@ export default function SettingsScreen() {
   async function toggleAppLock(value: boolean) {
     await setAppLockEnabled(value);
     setAppLockEnabledState(value);
+  }
+
+  function openBudgetModal() {
+    setDailyInput(dailyBudget > 0 ? String(dailyBudget) : "");
+    setMonthlyInput(monthlyBudget > 0 ? String(monthlyBudget) : "");
+    setMonthlyEditedManually(false);
+    setBudgetModalVisible(true);
+  }
+
+  function onDailyInputChange(val: string) {
+    setDailyInput(val);
+    if (!monthlyEditedManually) {
+      const parsed = parseFloat(val);
+      if (!isNaN(parsed) && parsed > 0) {
+        setMonthlyInput(String(Math.round(parsed * 30)));
+      } else {
+        setMonthlyInput("");
+      }
+    }
+  }
+
+  async function saveBudget() {
+    const daily = parseFloat(dailyInput);
+    const monthly = parseFloat(monthlyInput);
+
+    if (isNaN(daily) || daily <= 0) {
+      Alert.alert("خطأ", "يرجى إدخال سقف إنفاق يومي صحيح");
+      return;
+    }
+    if (isNaN(monthly) || monthly <= 0) {
+      Alert.alert("خطأ", "يرجى إدخال سقف إنفاق شهري صحيح");
+      return;
+    }
+
+    await setDailyBudget(daily);
+    await setMonthlyBudget(monthly);
+    setDailyBudgetState(daily);
+    setMonthlyBudgetState(monthly);
+    setBudgetModalVisible(false);
+  }
+
+  function formatAmount(n: number): string {
+    return Math.round(n).toLocaleString("ar-DZ");
   }
 
   const s = StyleSheet.create({
@@ -99,9 +159,7 @@ export default function SettingsScreen() {
       paddingHorizontal: 14,
       paddingVertical: 14,
     },
-    rowBorder: {
-      borderTopWidth: 1,
-    },
+    rowBorder: { borderTopWidth: 1 },
     rowLeft: {
       flexDirection: "row",
       alignItems: "center",
@@ -198,6 +256,68 @@ export default function SettingsScreen() {
       fontSize: 15,
       fontFamily: "Inter_600SemiBold",
     },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    inputLabel: {
+      fontSize: 13,
+      fontFamily: "Inter_500Medium",
+      textAlign: "right",
+      marginBottom: 8,
+    },
+    inputWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1.5,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    amountInput: {
+      flex: 1,
+      fontSize: 20,
+      fontFamily: "Inter_700Bold",
+      textAlign: "right",
+      padding: 0,
+    },
+    currencyLabel: {
+      fontSize: 14,
+      fontFamily: "Inter_500Medium",
+      marginLeft: 8,
+    },
+    autoNote: {
+      fontSize: 11,
+      fontFamily: "Inter_400Regular",
+      textAlign: "right",
+      marginTop: 4,
+    },
+    modalActions: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    cancelBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      alignItems: "center",
+    },
+    cancelBtnText: {
+      fontSize: 15,
+      fontFamily: "Inter_600SemiBold",
+    },
+    saveBtn: {
+      flex: 2,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    saveBtnText: {
+      fontSize: 15,
+      fontFamily: "Inter_600SemiBold",
+    },
   });
 
   return (
@@ -215,12 +335,17 @@ export default function SettingsScreen() {
         {/* ── الميزانية ── */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>الميزانية</Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <TouchableOpacity style={s.row} activeOpacity={1} disabled>
+
+          <TouchableOpacity
+            style={s.row}
+            activeOpacity={0.6}
+            onPress={openBudgetModal}
+          >
             <View style={s.rowRight}>
-              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
-              </View>
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>1,000 دج</Text>
+              <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {dailyBudget > 0 ? `${formatAmount(dailyBudget)} دج` : "غير محدد"}
+              </Text>
             </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>سقف الإنفاق اليومي</Text>
@@ -230,12 +355,16 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[s.row, s.rowBorder, { borderTopColor: colors.border }]} activeOpacity={1} disabled>
+          <TouchableOpacity
+            style={[s.row, s.rowBorder, { borderTopColor: colors.border }]}
+            activeOpacity={0.6}
+            onPress={openBudgetModal}
+          >
             <View style={s.rowRight}>
-              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
-              </View>
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>30,000 دج</Text>
+              <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {monthlyBudget > 0 ? `${formatAmount(monthlyBudget)} دج` : "غير محدد"}
+              </Text>
             </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>سقف الإنفاق الشهري</Text>
@@ -373,6 +502,84 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
+      {/* ── Budget Modal ── */}
+      <Modal
+        visible={budgetModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setBudgetModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={s.modalOverlay}
+        >
+          <Pressable style={s.modalBackdrop} onPress={() => setBudgetModalVisible(false)} />
+          <View style={[s.modalSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 }]}>
+            <View style={s.modalHandle} />
+            <Text style={[s.modalTitle, { color: colors.foreground }]}>سقف الإنفاق</Text>
+            <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
+              السقف الشهري يُحسب تلقائياً (اليومي × 30) ويمكنك تعديله يدوياً.
+            </Text>
+
+            <View style={s.inputGroup}>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>السقف اليومي</Text>
+              <View style={[s.inputWrapper, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <TextInput
+                  style={[s.amountInput, { color: colors.foreground }]}
+                  value={dailyInput}
+                  onChangeText={onDailyInputChange}
+                  keyboardType="numeric"
+                  placeholder="أدخل المبلغ"
+                  placeholderTextColor={colors.mutedForeground}
+                  textAlign="right"
+                  autoFocus
+                />
+                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
+              </View>
+            </View>
+
+            <View style={s.inputGroup}>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>السقف الشهري</Text>
+              <View style={[s.inputWrapper, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <TextInput
+                  style={[s.amountInput, { color: colors.foreground }]}
+                  value={monthlyInput}
+                  onChangeText={(val) => {
+                    setMonthlyInput(val);
+                    setMonthlyEditedManually(true);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="يُحسب تلقائياً"
+                  placeholderTextColor={colors.mutedForeground}
+                  textAlign="right"
+                />
+                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
+              </View>
+              {!monthlyEditedManually && dailyInput.length > 0 && (
+                <Text style={[s.autoNote, { color: colors.mutedForeground }]}>
+                  محسوب تلقائياً ({dailyInput} × 30)
+                </Text>
+              )}
+            </View>
+
+            <View style={s.modalActions}>
+              <TouchableOpacity
+                style={[s.cancelBtn, { borderColor: colors.border }]}
+                onPress={() => setBudgetModalVisible(false)}
+              >
+                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>إلغاء</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.saveBtn, { backgroundColor: colors.primary }]}
+                onPress={saveBudget}
+              >
+                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>حفظ</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* ── Cycle Start Day Picker ── */}
       <Modal
         visible={pickerVisible}
@@ -382,12 +589,7 @@ export default function SettingsScreen() {
       >
         <View style={s.modalOverlay}>
           <Pressable style={s.modalBackdrop} onPress={() => setPickerVisible(false)} />
-          <View
-            style={[
-              s.modalSheet,
-              { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 },
-            ]}
-          >
+          <View style={[s.modalSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 }]}>
             <View style={s.modalHandle} />
             <Text style={[s.modalTitle, { color: colors.foreground }]}>يوم بداية الدورة</Text>
             <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
@@ -409,12 +611,7 @@ export default function SettingsScreen() {
                       ]}
                       onPress={() => chooseDay(day)}
                     >
-                      <Text
-                        style={[
-                          s.dayChipText,
-                          { color: selected ? colors.primaryForeground : colors.foreground },
-                        ]}
-                      >
+                      <Text style={[s.dayChipText, { color: selected ? colors.primaryForeground : colors.foreground }]}>
                         {day}
                       </Text>
                     </TouchableOpacity>
