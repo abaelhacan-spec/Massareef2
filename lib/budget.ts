@@ -69,7 +69,9 @@ export function computeBudgetStats(
   expenses: { date: string; amount: number }[],
   startDate: Date,
   endDate: Date,
-  today: Date
+  today: Date,
+  dailyBudget: number = DAILY_BUDGET,
+  totalBudget: number = TOTAL_BUDGET
 ): BudgetStats {
   const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
