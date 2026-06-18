@@ -84,11 +84,13 @@ export function computeBudgetStats(
   const rawElapsed = Math.round((todayMs - startMs) / msPerDay) + 1;
   const daysElapsed = Math.max(1, Math.min(rawElapsed, totalDays));
 
-  const allowedSoFar = daysElapsed * DAILY_BUDGET;
+  const allowedSoFar = daysElapsed * dailyBudget;
   const difference = totalSpent - allowedSoFar;
-  const remaining = TOTAL_BUDGET - totalSpent;
+  const remaining = totalBudget - totalSpent;
   const isOverBudget = totalSpent > allowedSoFar;
-  const percentUsed = Math.min(100, (totalSpent / TOTAL_BUDGET) * 100);
+  const percentUsed = totalBudget > 0
+    ? Math.min(100, (totalSpent / totalBudget) * 100)
+    : 0;
 
   return { totalSpent, allowedSoFar, difference, remaining, isOverBudget, daysElapsed, totalDays, percentUsed };
 }
