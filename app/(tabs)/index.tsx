@@ -21,6 +21,8 @@ import { useColors } from "@/hooks/useColors";
 import {
   type Cycle,
   type DayExpense,
+  getDailyBudget,
+  getMonthlyBudget,
   getCycleStartDay,
   getExpensesForCycle,
   getOrCreateCurrentCycle,
@@ -164,12 +166,18 @@ export default function HomeScreen() {
   const [inputAmount, setInputAmount] = useState("");
   const [bannerVisible, setBannerVisible] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [dailyBudget, setDailyBudgetState] = useState<number>(0);
+  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
 
   const today = new Date();
   const todayStr = formatDate(today);
 
   const loadData = useCallback(async () => {
     const cycleStartDay = await getCycleStartDay();
+    const daily = await getDailyBudget();
+    const monthly = await getMonthlyBudget();
+    setDailyBudgetState(daily);
+    setMonthlyBudgetState(monthly);
     const startDate = getCycleStartDate(today, cycleStartDay);
     const endDate = getCycleEndDate(startDate, cycleStartDay);
     const name = getCycleName(startDate);
@@ -217,7 +225,9 @@ export default function HomeScreen() {
           expenses,
           new Date(cycle.start_date + "T00:00:00"),
           new Date(cycle.end_date + "T00:00:00"),
-          today
+          today,
+          dailyBudget,
+          monthlyBudget
         )
       : null;
 
@@ -493,7 +503,7 @@ export default function HomeScreen() {
             <View style={s.progressSection}>
               <View style={s.progressRow}>
                 <Text style={[s.progressLabelSm, { color: colors.mutedForeground }]}>
-                  {formatAmount(TOTAL_BUDGET)} دج
+                 {monthlyBudget > 0 ? `${formatAmount(monthlyBudget)} دج` : "غير محدد"} 
                 </Text>
                 <Text style={[s.progressLabel, { color: colors.mutedForeground }]}>
                   {stats.daysElapsed} / {stats.totalDays} يوم • {Math.round(stats.percentUsed)}%
@@ -515,7 +525,7 @@ export default function HomeScreen() {
         {expenses.length > 0 && (
           <View style={s.sectionHeader}>
             <Text style={[s.sectionSub, { color: colors.mutedForeground }]}>
-              {formatAmount(DAILY_BUDGET)} دج / يوم
+             {dailyBudget > 0 ? `${formatAmount(dailyBudget)} دج / يوم` : "لم يُحدد سقف"} 
             </Text>
             <Text style={[s.sectionTitle, { color: colors.foreground }]}>أيام الدورة</Text>
           </View>
@@ -523,7 +533,7 @@ export default function HomeScreen() {
 
         {expenses.map((day) => {
           const todayFlag = isToday(day.date);
-          const overDay = !!day.is_entered && day.amount > DAILY_BUDGET; 
+          const overDay = !!day.is_entered && dailyBudget > 0 && day.amount > dailyBudget;
           const amtColor =
     !day.is_entered
       ? colors.mutedForeground
