@@ -24,7 +24,7 @@ export interface DayExpense {
   cycle_id: number;
   date: string;
   amount: number;
-  is_entered: number; // 0 = لم يُدخل بعد، 1 = أُدخل
+  is_entered: number;
 }
 
 export async function initDB(): Promise<void> {
@@ -51,7 +51,6 @@ export async function initDB(): Promise<void> {
       value TEXT NOT NULL
     );
   `);
-
   try {
     await db.execAsync(`ALTER TABLE expenses ADD COLUMN is_entered INTEGER DEFAULT 0`);
   } catch (_) {}
@@ -179,8 +178,10 @@ export async function setAppLockEnabled(enabled: boolean): Promise<void> {
   await db.runAsync(
     `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('app_lock_enabled', ?)`,
     [enabled ? "1" : "0"]
-    }
-  const DEFAULT_DAILY_BUDGET = 0;
+  );
+}
+
+const DEFAULT_DAILY_BUDGET = 0;
 const DEFAULT_MONTHLY_BUDGET = 0;
 
 export async function getDailyBudget(): Promise<number> {
@@ -221,4 +222,4 @@ export async function setMonthlyBudget(amount: number): Promise<void> {
     `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('monthly_budget', ?)`,
     [String(amount)]
   );
-    }
+}
