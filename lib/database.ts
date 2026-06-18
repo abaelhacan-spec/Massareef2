@@ -179,6 +179,7 @@ export async function setAppLockEnabled(enabled: boolean): Promise<void> {
   await db.runAsync(
     `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('app_lock_enabled', ?)`,
     [enabled ? "1" : "0"]
+    }
   const DEFAULT_DAILY_BUDGET = 0;
 const DEFAULT_MONTHLY_BUDGET = 0;
 
