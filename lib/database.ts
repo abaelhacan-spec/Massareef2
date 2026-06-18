@@ -179,5 +179,45 @@ export async function setAppLockEnabled(enabled: boolean): Promise<void> {
   await db.runAsync(
     `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('app_lock_enabled', ?)`,
     [enabled ? "1" : "0"]
+  const DEFAULT_DAILY_BUDGET = 0;
+const DEFAULT_MONTHLY_BUDGET = 0;
+
+export async function getDailyBudget(): Promise<number> {
+  const db = await getDB();
+  if (!db) return DEFAULT_DAILY_BUDGET;
+  const row = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_settings WHERE key = 'daily_budget'`
+  );
+  if (!row) return DEFAULT_DAILY_BUDGET;
+  const parsed = parseFloat(row.value);
+  return isNaN(parsed) || parsed < 0 ? DEFAULT_DAILY_BUDGET : parsed;
+}
+
+export async function setDailyBudget(amount: number): Promise<void> {
+  const db = await getDB();
+  if (!db) return;
+  await db.runAsync(
+    `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('daily_budget', ?)`,
+    [String(amount)]
   );
 }
+
+export async function getMonthlyBudget(): Promise<number> {
+  const db = await getDB();
+  if (!db) return DEFAULT_MONTHLY_BUDGET;
+  const row = await db.getFirstAsync<{ value: string }>(
+    `SELECT value FROM app_settings WHERE key = 'monthly_budget'`
+  );
+  if (!row) return DEFAULT_MONTHLY_BUDGET;
+  const parsed = parseFloat(row.value);
+  return isNaN(parsed) || parsed < 0 ? DEFAULT_MONTHLY_BUDGET : parsed;
+}
+
+export async function setMonthlyBudget(amount: number): Promise<void> {
+  const db = await getDB();
+  if (!db) return;
+  await db.runAsync(
+    `INSERT OR REPLACE INTO app_settings (key, value) VALUES ('monthly_budget', ?)`,
+    [String(amount)]
+  );
+    }
