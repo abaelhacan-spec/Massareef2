@@ -672,6 +672,12 @@ const [calcVisible, setCalcVisible] = useState(false);
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <CalcModal
+        visible={calcVisible}
+        onClose={() => setCalcVisible(false)}
+        onInsert={(total) => setInputAmount(String(total))}
+      />
     </View>
   );
 }
