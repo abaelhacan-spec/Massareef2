@@ -169,7 +169,8 @@ export default function HomeScreen() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [dailyBudget, setDailyBudgetState] = useState<number>(0);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
-
+const [calcVisible, setCalcVisible] = useState(false);
+  
   const today = new Date();
   const todayStr = formatDate(today);
 
