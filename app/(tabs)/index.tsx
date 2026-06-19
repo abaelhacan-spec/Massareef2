@@ -39,6 +39,7 @@ import {
   getCycleStartDate,
   getDayNameAr,
 } from "@/lib/budget";
+import { CalcModal } from "@/components/CalcModal";
 
 // ─── In-app reminder banner ───────────────────────────────────────────────────
 function ReminderBanner({
