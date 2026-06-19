@@ -612,21 +612,34 @@ const [calcVisible, setCalcVisible] = useState(false);
             </Text>
 
             <View
-              style={[s.inputWrapper, { borderColor: colors.border, backgroundColor: colors.background }]}
-            >
-              <TextInput
-                style={[s.amountInput, { color: colors.foreground }]}
-                value={inputAmount}
-                onChangeText={setInputAmount}
-                keyboardType="numeric"
-                placeholder="0"
-                placeholderTextColor={colors.mutedForeground}
-                textAlign="right"
-                autoFocus
-                selectTextOnFocus
-              />
-              <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
-            </View>
+  style={[s.inputWrapper, { borderColor: colors.border, backgroundColor: colors.background }]}
+>
+  <TextInput
+    style={[s.amountInput, { color: colors.foreground }]}
+    value={inputAmount}
+    onChangeText={setInputAmount}
+    keyboardType="numeric"
+    placeholder="0"
+    placeholderTextColor={colors.mutedForeground}
+    textAlign="right"
+    autoFocus
+    selectTextOnFocus
+  />
+
+  <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
+
+  <TouchableOpacity
+    onPress={() => setCalcVisible(true)}
+    style={{ marginLeft: 8 }}
+    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+  >
+    <Feather
+      name="grid"
+      size={20}
+      color={colors.mutedForeground}
+    />
+  </TouchableOpacity>
+</View>
 
             <View style={s.quickAmounts}>
               {[500, 1000, 1500, 2000].map((amt) => (
