@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -34,6 +34,13 @@ export function CalcModal({
   const [items, setItems] = useState<number[]>(
     initialValue > 0 ? [initialValue] : []
   );
+
+  useEffect(() => {
+    if (visible) {
+      setItems(initialValue > 0 ? [initialValue] : []);
+      setInput("");
+    }
+  }, [visible, initialValue]);
 
   const total = items.reduce((sum, n) => sum + n, 0);
 
