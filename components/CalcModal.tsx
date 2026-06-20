@@ -18,18 +18,28 @@ interface CalcModalProps {
   visible: boolean;
   onClose: () => void;
   onInsert: (total: number) => void;
+  initialValue?: number;
 }
 
-export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
+export function CalcModal({
+  visible,
+  onClose,
+  onInsert,
+  initialValue = 0,
+}: CalcModalProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+
   const [input, setInput] = useState("");
-  const [items, setItems] = useState<number[]>([]);
+  const [items, setItems] = useState<number[]>(
+    initialValue > 0 ? [initialValue] : []
+  );
 
   const total = items.reduce((sum, n) => sum + n, 0);
 
   function handleAdd() {
     const val = parseFloat(input.trim());
+
     if (!isNaN(val) && val > 0) {
       setItems((prev) => [...prev, val]);
       setInput("");
@@ -41,22 +51,25 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
   }
 
   function handleClearAll() {
-    setItems([]);
+    setItems(initialValue > 0 ? [initialValue] : []);
     setInput("");
   }
 
   function handleInsert() {
     if (items.length > 0) {
       onInsert(total);
-      setItems([]);
+
+      setItems(initialValue > 0 ? [initialValue] : []);
       setInput("");
+
       onClose();
     }
   }
 
   function handleClose() {
-    setItems([]);
+    setItems(initialValue > 0 ? [initialValue] : []);
     setInput("");
+
     onClose();
   }
 
@@ -65,8 +78,16 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
   }
 
   const s = StyleSheet.create({
-    modalOverlay: { flex: 1, justifyContent: "flex-end" },
-    modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
+    modalOverlay: {
+      flex: 1,
+      justifyContent: "flex-end",
+    },
+
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+    },
+
     sheet: {
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
@@ -75,6 +96,7 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       paddingBottom: insets.bottom + 24,
       backgroundColor: colors.card,
     },
+
     handle: {
       width: 36,
       height: 4,
@@ -83,6 +105,7 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       alignSelf: "center",
       marginBottom: 18,
     },
+
     title: {
       fontSize: 18,
       fontFamily: "Inter_700Bold",
@@ -90,12 +113,14 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       textAlign: "right",
       marginBottom: 16,
     },
+
     inputRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
       marginBottom: 14,
     },
+
     inputWrapper: {
       flex: 1,
       flexDirection: "row",
@@ -107,6 +132,7 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       borderColor: colors.border,
       backgroundColor: colors.background,
     },
+
     textInput: {
       flex: 1,
       fontSize: 20,
@@ -115,12 +141,14 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       padding: 0,
       color: colors.foreground,
     },
+
     currency: {
       fontSize: 14,
       fontFamily: "Inter_500Medium",
       color: colors.mutedForeground,
       marginLeft: 6,
     },
+
     addBtn: {
       width: 48,
       height: 48,
@@ -129,6 +157,7 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       alignItems: "center",
       justifyContent: "center",
     },
+
     sectionLabel: {
       fontSize: 12,
       fontFamily: "Inter_600SemiBold",
@@ -136,6 +165,7 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       textAlign: "right",
       marginBottom: 8,
     },
+
     itemsContainer: {
       backgroundColor: colors.secondary,
       borderRadius: 12,
@@ -144,12 +174,14 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       marginBottom: 12,
       minHeight: 48,
     },
+
     emptyText: {
       fontSize: 13,
       fontFamily: "Inter_400Regular",
       color: colors.mutedForeground,
       textAlign: "right",
     },
+
     itemRow: {
       flexDirection: "row",
       justifyContent: "flex-end",
@@ -157,11 +189,13 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
+
     itemText: {
       fontSize: 15,
       fontFamily: "Inter_500Medium",
       color: colors.foreground,
     },
+
     totalRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -169,21 +203,25 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       marginBottom: 16,
       paddingHorizontal: 4,
     },
+
     totalLabel: {
       fontSize: 14,
       fontFamily: "Inter_500Medium",
       color: colors.mutedForeground,
     },
+
     totalValue: {
       fontSize: 22,
       fontFamily: "Inter_700Bold",
       color: colors.primary,
     },
+
     utilBtns: {
       flexDirection: "row",
       gap: 8,
       marginBottom: 12,
     },
+
     utilBtn: {
       flex: 1,
       paddingVertical: 10,
@@ -192,22 +230,28 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
       borderColor: colors.border,
       alignItems: "center",
     },
+
     utilBtnText: {
       fontSize: 13,
       fontFamily: "Inter_500Medium",
       color: colors.mutedForeground,
     },
+
     insertBtn: {
       paddingVertical: 14,
       borderRadius: 12,
-      backgroundColor: items.length > 0 ? colors.primary : colors.border,
+      backgroundColor:
+        items.length > 0 ? colors.primary : colors.border,
       alignItems: "center",
     },
+
     insertBtnText: {
       fontSize: 16,
       fontFamily: "Inter_600SemiBold",
       color:
-        items.length > 0 ? colors.primaryForeground : colors.mutedForeground,
+        items.length > 0
+          ? colors.primaryForeground
+          : colors.mutedForeground,
     },
   });
 
@@ -222,16 +266,29 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={s.modalOverlay}
       >
-        <Pressable style={s.modalBackdrop} onPress={handleClose} />
+        <Pressable
+          style={s.modalBackdrop}
+          onPress={handleClose}
+        />
+
         <View style={s.sheet}>
           <View style={s.handle} />
+
           <Text style={s.title}>🧮 حاسبة الجمع</Text>
 
-          {/* Input + Add button */}
+          {/* Input + Add Button */}
           <View style={s.inputRow}>
-            <TouchableOpacity style={s.addBtn} onPress={handleAdd}>
-              <Feather name="plus" size={22} color="#fff" />
+            <TouchableOpacity
+              style={s.addBtn}
+              onPress={handleAdd}
+            >
+              <Feather
+                name="plus"
+                size={22}
+                color="#fff"
+              />
             </TouchableOpacity>
+
             <View style={s.inputWrapper}>
               <TextInput
                 style={s.textInput}
@@ -239,24 +296,32 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
                 onChangeText={setInput}
                 keyboardType="numeric"
                 placeholder="أدخل المبلغ"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor={
+                  colors.mutedForeground
+                }
                 returnKeyType="done"
                 onSubmitEditing={handleAdd}
                 autoFocus
               />
+
               <Text style={s.currency}>دج</Text>
             </View>
           </View>
 
-          {/* Items list */}
+          {/* Items */}
           <Text style={s.sectionLabel}>العناصر:</Text>
+
           <View style={s.itemsContainer}>
             {items.length === 0 ? (
-              <Text style={s.emptyText}>لا توجد عناصر بعد</Text>
+              <Text style={s.emptyText}>
+                لا توجد عناصر بعد
+              </Text>
             ) : (
               items.map((item, index) => (
                 <View key={index} style={s.itemRow}>
-                  <Text style={s.itemText}>{formatAmount(item)} دج</Text>
+                  <Text style={s.itemText}>
+                    {formatAmount(item)} دج
+                  </Text>
                 </View>
               ))
             )}
@@ -264,35 +329,47 @@ export function CalcModal({ visible, onClose, onInsert }: CalcModalProps) {
 
           {/* Total */}
           <View style={s.totalRow}>
-            <Text style={s.totalValue}>{formatAmount(total)} دج</Text>
-            <Text style={s.totalLabel}>المجموع:</Text>
+            <Text style={s.totalValue}>
+              {formatAmount(total)} دج
+            </Text>
+
+            <Text style={s.totalLabel}>
+              المجموع:
+            </Text>
           </View>
 
-          {/* Utility buttons */}
+          {/* Utility Buttons */}
           <View style={s.utilBtns}>
             <TouchableOpacity
               style={s.utilBtn}
               onPress={handleDeleteLast}
               disabled={items.length === 0}
             >
-              <Text style={s.utilBtnText}>حذف آخر عنصر</Text>
+              <Text style={s.utilBtnText}>
+                حذف آخر عنصر
+              </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={s.utilBtn}
               onPress={handleClearAll}
               disabled={items.length === 0}
             >
-              <Text style={s.utilBtnText}>مسح الكل</Text>
+              <Text style={s.utilBtnText}>
+                مسح الكل
+              </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Insert button */}
+          {/* Insert Button */}
           <TouchableOpacity
             style={s.insertBtn}
             onPress={handleInsert}
             disabled={items.length === 0}
           >
-            <Text style={s.insertBtnText}>إدراج المجموع</Text>
+            <Text style={s.insertBtnText}>
+              إدراج المجموع
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
