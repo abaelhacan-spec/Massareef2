@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-import { type Cycle, type DayExpense, getAllCycles, getExpensesForCycle } from "@/lib/database";
+import { type Cycle, type DayExpense, getAllCycles, getExpensesForCycle, getMonthlyBudget } from "@/lib/database";
 import { DAILY_BUDGET, TOTAL_BUDGET, formatDateAr, getDayNameAr } from "@/lib/budget";
 
 export default function HistoryScreen() {
@@ -27,6 +27,7 @@ export default function HistoryScreen() {
   const [selectedCycle, setSelectedCycle] = useState<(Cycle & { total_spent: number }) | null>(null);
   const [selectedExpenses, setSelectedExpenses] = useState<DayExpense[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
 
   const loadCycles = useCallback(async () => {
     const data = await getAllCycles();
@@ -48,7 +49,9 @@ export default function HistoryScreen() {
     setDetailVisible(true);
     setLoadingDetail(true);
     const data = await getExpensesForCycle(cycle.id);
+    const monthly = await getMonthlyBudget();
     setSelectedExpenses(data);
+    setMonthlyBudgetState(monthly);
     setLoadingDetail(false);
   }
 
@@ -62,14 +65,13 @@ export default function HistoryScreen() {
     return Math.round(n).toLocaleString("ar-DZ");
   }
 
-  function getCycleSummary(expenses: DayExpense[]) {
+  function getCycleSummary(expenses: DayExpense[], monthlyBudgetValue: number) {
     const total = expenses.reduce((sum, d) => sum + d.amount, 0);
     const zeroDays = expenses.filter((d) => d.amount === 0).length;
-    let maxDay: DayExpense | null = null;
-    for (const d of expenses) {
-      if (!maxDay || d.amount > maxDay.amount) maxDay = d;
-    }
-    return { total, zeroDays, maxDay };
+    const totalDays = expenses.length;
+    const dailyAverage = totalDays > 0 ? total / totalDays : 0;
+    const surplus = monthlyBudgetValue > 0 ? monthlyBudgetValue - total : null;
+    return { total, zeroDays, dailyAverage, surplus };
   }
 
   const s = StyleSheet.create({
@@ -344,29 +346,39 @@ export default function HistoryScreen() {
             ) : (
               <>
                 {(() => {
-                  const summary = getCycleSummary(selectedExpenses);
+                  const summary = getCycleSummary(selectedExpenses, monthlyBudget);
+                  const hasSurplus = summary.surplus !== null;
+                  const isSurplus = hasSurplus && (summary.surplus as number) >= 0;
                   return (
                     <View style={[s.summaryBox, { backgroundColor: colors.secondary }]}>
                       <View style={s.summaryItem}>
                         <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
-                          إجمالي المصروف
+                          {!hasSurplus ? "الفائض/العجز" : isSurplus ? "الفائض" : "العجز"}
                         </Text>
-                        <Text style={[s.summaryValue, { color: colors.foreground }]}>
-                          {formatAmount(summary.total)} دج
+                        <Text
+                          style={[
+                            s.summaryValue,
+                            {
+                              color: !hasSurplus
+                                ? colors.mutedForeground
+                                : isSurplus
+                                ? colors.success
+                                : colors.destructive,
+                            },
+                          ]}
+                        >
+                          {!hasSurplus
+                            ? "—"
+                            : `${isSurplus ? "+" : ""}${formatAmount(summary.surplus as number)} دج`}
                         </Text>
                       </View>
                       <View style={s.summaryItem}>
                         <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
-                          أعلى يوم صرف
+                          المتوسط اليومي
                         </Text>
-                        <Text style={[s.summaryValue, { color: colors.destructive }]}>
-                          {summary.maxDay ? formatAmount(summary.maxDay.amount) : "0"} دج
+                        <Text style={[s.summaryValue, { color: colors.foreground }]}>
+                          {formatAmount(summary.dailyAverage)} دج
                         </Text>
-                        {summary.maxDay && summary.maxDay.amount > 0 && (
-                          <Text style={[s.summarySub, { color: colors.mutedForeground }]}>
-                            {getDayNameAr(summary.maxDay.date)}
-                          </Text>
-                        )}
                       </View>
                       <View style={s.summaryItem}>
                         <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
