@@ -677,6 +677,11 @@ const [calcVisible, setCalcVisible] = useState(false);
         visible={calcVisible}
         onClose={() => setCalcVisible(false)}
         onInsert={(total) => setInputAmount(String(total))}
+       initialValue={
+          selectedDay?.is_entered && selectedDay.amount > 0
+            ? selectedDay.amount
+            : 0
+        } 
       />
     </View>
   );
