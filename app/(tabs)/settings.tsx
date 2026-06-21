@@ -1,6 +1,10 @@
 import { Feather } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
@@ -18,14 +22,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import {
+  exportBackup,
   getAppLockEnabled,
   getCycleStartDay,
   getDailyBudget,
   getMonthlyBudget,
+  importBackup,
   setAppLockEnabled,
   setCycleStartDay,
   setDailyBudget,
   setMonthlyBudget,
+  type BackupData,
 } from "@/lib/database";
 
 const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
@@ -43,6 +50,7 @@ export default function SettingsScreen() {
   const [dailyInput, setDailyInput] = useState("");
   const [monthlyInput, setMonthlyInput] = useState("");
   const [monthlyEditedManually, setMonthlyEditedManually] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -109,6 +117,78 @@ export default function SettingsScreen() {
 
   function formatAmount(n: number): string {
     return Math.round(n).toLocaleString("ar-DZ");
+  }
+
+  async function handleExport() {
+    try {
+      setBackupLoading(true);
+      const data = await exportBackup();
+      const json = JSON.stringify(data, null, 2);
+      const date = new Date().toISOString().split("T")[0];
+      const fileName = `massareef_backup_${date}.json`;
+      const filePath = `${FileSystem.cacheDirectory}${fileName}`;
+      await FileSystem.writeAsStringAsync(filePath, json, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(filePath, {
+          mimeType: "application/json",
+          dialogTitle: "حفظ النسخة الاحتياطية",
+          UTI: "public.json",
+        });
+      } else {
+        Alert.alert("خطأ", "المشاركة غير متاحة على هذا الجهاز");
+      }
+    } catch {
+      Alert.alert("خطأ", "فشل إنشاء النسخة الاحتياطية");
+    } finally {
+      setBackupLoading(false);
+    }
+  }
+
+  async function handleImport() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/json",
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const file = result.assets[0];
+      if (!file?.uri) return;
+
+      Alert.alert(
+        "تأكيد الاستيراد",
+        "سيتم استبدال جميع البيانات الحالية بالنسخة الاحتياطية. هل أنت متأكد؟",
+        [
+          { text: "إلغاء", style: "cancel" },
+          {
+            text: "استيراد",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                setBackupLoading(true);
+                const content = await FileSystem.readAsStringAsync(file.uri, {
+                  encoding: FileSystem.EncodingType.UTF8,
+                });
+                const data: BackupData = JSON.parse(content);
+                await importBackup(data);
+                Alert.alert(
+                  "تم بنجاح",
+                  "تم استيراد النسخة الاحتياطية. أغلق التطبيق وأعد فتحه لتطبيق التغييرات."
+                );
+              } catch {
+                Alert.alert("خطأ", "الملف غير صالح أو تالف");
+              } finally {
+                setBackupLoading(false);
+              }
+            },
+          },
+        ]
+      );
+    } catch {
+      Alert.alert("خطأ", "فشل اختيار الملف");
+    }
   }
 
   const s = StyleSheet.create({
@@ -467,30 +547,42 @@ export default function SettingsScreen() {
         {/* ── البيانات ── */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>البيانات</Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <TouchableOpacity style={s.row} activeOpacity={1} disabled>
+          <TouchableOpacity
+            style={[s.row, { opacity: backupLoading ? 0.5 : 1 }]}
+            activeOpacity={0.6}
+            onPress={handleExport}
+            disabled={backupLoading}
+          >
             <View style={s.rowRight}>
-              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
-              </View>
+              {backupLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+              )}
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>نسخ احتياطي</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>تصدير نسخة احتياطية</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="upload" size={16} color={colors.primary} />
               </View>
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[s.row, s.rowBorder, { borderTopColor: colors.border }]} activeOpacity={1} disabled>
+          <TouchableOpacity
+            style={[s.row, s.rowBorder, { borderTopColor: colors.border, opacity: backupLoading ? 0.5 : 1 }]}
+            activeOpacity={0.6}
+            onPress={handleImport}
+            disabled={backupLoading}
+          >
             <View style={s.rowRight}>
-              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
-              </View>
+              <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>استعادة من نسخة احتياطية</Text>
-              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
-                <Feather name="download" size={16} color={colors.primary} />
+              <Text style={[s.rowLabel, { color: colors.destructive }]}>
+                استعادة من نسخة احتياطية
+              </Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.dangerLight }]}>
+                <Feather name="download" size={16} color={colors.destructive} />
               </View>
             </View>
           </TouchableOpacity>
