@@ -223,3 +223,82 @@ export async function setMonthlyBudget(amount: number): Promise<void> {
     [String(amount)]
   );
 }
+
+// ─── Backup & Restore ─────────────────────────────────────────────────────────
+
+export interface BackupData {
+  version: number;
+  exportedAt: string;
+  settings: Record<string, string>;
+  cycles: Cycle[];
+  expenses: DayExpense[];
+}
+
+export async function exportBackup(): Promise<BackupData> {
+  const db = await getDB();
+  if (!db) throw new Error("النسخ الاحتياطي غير متاح على الويب");
+
+  const settingsRows = await db.getAllAsync<{ key: string; value: string }>(
+    `SELECT key, value FROM app_settings`
+  );
+  const cycles = await db.getAllAsync<Cycle>(
+    `SELECT * FROM cycles ORDER BY start_date ASC`
+  );
+  const expenses = await db.getAllAsync<DayExpense>(
+    `SELECT * FROM expenses ORDER BY cycle_id ASC, date ASC`
+  );
+
+  const settings: Record<string, string> = {};
+  for (const row of settingsRows) {
+    settings[row.key] = row.value;
+  }
+
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    settings,
+    cycles,
+    expenses,
+  };
+}
+
+export async function importBackup(data: BackupData): Promise<void> {
+  const db = await getDB();
+  if (!db) throw new Error("الاستيراد غير متاح على الويب");
+
+  if (
+    typeof data.version !== "number" ||
+    !Array.isArray(data.cycles) ||
+    !Array.isArray(data.expenses) ||
+    typeof data.settings !== "object"
+  ) {
+    throw new Error("صيغة الملف غير صالحة");
+  }
+
+  await db.execAsync(`
+    DELETE FROM expenses;
+    DELETE FROM cycles;
+    DELETE FROM app_settings;
+  `);
+
+  for (const [key, value] of Object.entries(data.settings)) {
+    await db.runAsync(
+      `INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)`,
+      [key, value]
+    );
+  }
+
+  for (const cycle of data.cycles) {
+    await db.runAsync(
+      `INSERT INTO cycles (id, name, start_date, end_date, is_locked) VALUES (?, ?, ?, ?, ?)`,
+      [cycle.id, cycle.name, cycle.start_date, cycle.end_date, cycle.is_locked]
+    );
+  }
+
+  for (const expense of data.expenses) {
+    await db.runAsync(
+      `INSERT INTO expenses (id, cycle_id, date, amount, is_entered) VALUES (?, ?, ?, ?, ?)`,
+      [expense.id, expense.cycle_id, expense.date, expense.amount, expense.is_entered]
+    );
+  }
+}
