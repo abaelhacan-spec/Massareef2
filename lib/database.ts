@@ -1,3 +1,4 @@
+import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { Platform } from "react-native";
 
@@ -25,6 +26,14 @@ export interface DayExpense {
   date: string;
   amount: number;
   is_entered: number;
+}
+
+export interface BackupData {
+  version: number;
+  exportedAt: string;
+  settings: Record<string, string>;
+  cycles: Cycle[];
+  expenses: DayExpense[];
 }
 
 export async function initDB(): Promise<void> {
@@ -224,21 +233,13 @@ export async function setMonthlyBudget(amount: number): Promise<void> {
   );
 }
 
-// ─── Backup & Restore ─────────────────────────────────────────────────────────
-
-export interface BackupData {
-  version: number;
-  exportedAt: string;
-  settings: Record<string, string>;
-  cycles: Cycle[];
-  expenses: DayExpense[];
-}
+// ── Backup & Restore ──────────────────────────────────────────────────────────
 
 export async function exportBackup(): Promise<BackupData> {
   const db = await getDB();
-  if (!db) throw new Error("النسخ الاحتياطي غير متاح على الويب");
+  if (!db) throw new Error("قاعدة البيانات غير متوفرة على هذا النظام");
 
-  const settingsRows = await db.getAllAsync<{ key: string; value: string }>(
+  const settings = await db.getAllAsync<{ key: string; value: string }>(
     `SELECT key, value FROM app_settings`
   );
   const cycles = await db.getAllAsync<Cycle>(
@@ -248,57 +249,70 @@ export async function exportBackup(): Promise<BackupData> {
     `SELECT * FROM expenses ORDER BY cycle_id ASC, date ASC`
   );
 
-  const settings: Record<string, string> = {};
-  for (const row of settingsRows) {
-    settings[row.key] = row.value;
-  }
-
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
-    settings,
+    settings: Object.fromEntries(settings.map((s) => [s.key, s.value])),
     cycles,
     expenses,
   };
 }
 
-export async function importBackup(data: BackupData): Promise<void> {
+export async function importBackup(backup: BackupData): Promise<void> {
+  if (!backup || backup.version !== 1) {
+    throw new Error("ملف النسخة الاحتياطية غير صالح أو إصداره غير مدعوم");
+  }
+
   const db = await getDB();
-  if (!db) throw new Error("الاستيراد غير متاح على الويب");
+  if (!db) throw new Error("قاعدة البيانات غير متوفرة على هذا النظام");
 
-  if (
-    typeof data.version !== "number" ||
-    !Array.isArray(data.cycles) ||
-    !Array.isArray(data.expenses) ||
-    typeof data.settings !== "object"
-  ) {
-    throw new Error("صيغة الملف غير صالحة");
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(`DELETE FROM expenses`);
+    await db.runAsync(`DELETE FROM cycles`);
+    await db.runAsync(`DELETE FROM app_settings`);
+
+    for (const [key, value] of Object.entries(backup.settings)) {
+      await db.runAsync(
+        `INSERT INTO app_settings (key, value) VALUES (?, ?)`,
+        [key, value]
+      );
+    }
+
+    for (const cycle of backup.cycles) {
+      await db.runAsync(
+        `INSERT INTO cycles (id, name, start_date, end_date, is_locked) VALUES (?, ?, ?, ?, ?)`,
+        [cycle.id, cycle.name, cycle.start_date, cycle.end_date, cycle.is_locked]
+      );
+    }
+
+    for (const exp of backup.expenses) {
+      await db.runAsync(
+        `INSERT OR IGNORE INTO expenses (id, cycle_id, date, amount, is_entered) VALUES (?, ?, ?, ?, ?)`,
+        [exp.id, exp.cycle_id, exp.date, exp.amount, exp.is_entered ?? 0]
+      );
+    }
+  });
+}
+
+export async function saveBackupToFile(backup: BackupData): Promise<string> {
+  const filename = `massareef_backup_${new Date().toISOString().split("T")[0]}.json`;
+  const path = `${FileSystem.documentDirectory}${filename}`;
+  await FileSystem.writeAsStringAsync(path, JSON.stringify(backup, null, 2), {
+    encoding: FileSystem.EncodingType.UTF8,
+  });
+  return path;
+}
+
+export async function loadBackupFromFile(uri: string): Promise<BackupData> {
+  let content: string;
+  if (uri.startsWith("content://") || uri.startsWith("file://")) {
+    content = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.UTF8,
+    });
+  } else {
+    content = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.UTF8,
+    });
   }
-
-  await db.execAsync(`
-    DELETE FROM expenses;
-    DELETE FROM cycles;
-    DELETE FROM app_settings;
-  `);
-
-  for (const [key, value] of Object.entries(data.settings)) {
-    await db.runAsync(
-      `INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)`,
-      [key, value]
-    );
-  }
-
-  for (const cycle of data.cycles) {
-    await db.runAsync(
-      `INSERT INTO cycles (id, name, start_date, end_date, is_locked) VALUES (?, ?, ?, ?, ?)`,
-      [cycle.id, cycle.name, cycle.start_date, cycle.end_date, cycle.is_locked]
-    );
-  }
-
-  for (const expense of data.expenses) {
-    await db.runAsync(
-      `INSERT INTO expenses (id, cycle_id, date, amount, is_entered) VALUES (?, ?, ?, ?, ?)`,
-      [expense.id, expense.cycle_id, expense.date, expense.amount, expense.is_entered]
-    );
-  }
+  return JSON.parse(content) as BackupData;
 }
