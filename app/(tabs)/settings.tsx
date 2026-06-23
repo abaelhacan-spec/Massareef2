@@ -67,7 +67,6 @@ export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
 
-  // ── Settings state ─────────────────────────────────────────────────────────
   const [cycleStartDay, setCycleStartDayState] = useState(6);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [appLockEnabled, setAppLockEnabledState] = useState(false);
@@ -77,13 +76,9 @@ export default function SettingsScreen() {
   const [dailyInput, setDailyInput] = useState("");
   const [monthlyInput, setMonthlyInput] = useState("");
   const [monthlyEditedManually, setMonthlyEditedManually] = useState(false);
-
-  // ── Cloud state ────────────────────────────────────────────────────────────
   const [cloudUser, setCloudUser] = useState<User | null>(null);
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null);
   const [cloudLoading, setCloudLoading] = useState(false);
-
-  // ── Local backup state ─────────────────────────────────────────────────────
   const [localLoading, setLocalLoading] = useState(false);
 
   useEffect(() => {
@@ -112,7 +107,6 @@ export default function SettingsScreen() {
     return unsubscribe;
   }, []);
 
-  // ── Settings handlers ──────────────────────────────────────────────────────
   async function chooseDay(day: number) {
     await setCycleStartDay(day);
     setCycleStartDayState(day);
@@ -161,7 +155,6 @@ export default function SettingsScreen() {
     return Math.round(n).toLocaleString("ar-DZ");
   }
 
-  // ── Local backup handlers ──────────────────────────────────────────────────
   async function handleLocalExport() {
     setLocalLoading(true);
     try {
@@ -186,7 +179,7 @@ export default function SettingsScreen() {
   async function handleLocalImport() {
     Alert.alert(
       "تحذير",
-      "سيؤدي هذا إلى استبدال جميع بياناتك الحالية بالبيانات الموجودة في ملف النسخة الاحتياطية. هل تريد المتابعة؟",
+      "سيؤدي هذا إلى استبدال جميع بياناتك الحالية. هل تريد المتابعة؟",
       [
         { text: "إلغاء", style: "cancel" },
         {
@@ -203,10 +196,7 @@ export default function SettingsScreen() {
               const file = result.assets[0];
               const backup = await loadBackupFromFile(file.uri);
               await importBackup(backup);
-              Alert.alert(
-                "تم",
-                "تمت استعادة البيانات بنجاح. أعد تشغيل التطبيق لرؤية التغييرات."
-              );
+              Alert.alert("تم", "تمت استعادة البيانات بنجاح. أعد تشغيل التطبيق.");
             } catch (e: any) {
               Alert.alert("خطأ", e.message ?? "فشل استيراد النسخة الاحتياطية");
             } finally {
@@ -218,7 +208,6 @@ export default function SettingsScreen() {
     );
   }
 
-  // ── Cloud backup handlers ──────────────────────────────────────────────────
   async function handleGoogleSignIn() {
     setCloudLoading(true);
     try {
@@ -257,8 +246,7 @@ export default function SettingsScreen() {
     try {
       const backup = await exportBackup();
       await uploadBackupToCloud(backup);
-      const date = new Date().toISOString();
-      setLastBackupDate(date);
+      setLastBackupDate(new Date().toISOString());
       Alert.alert("تم ✓", "تم رفع النسخة الاحتياطية إلى السحابة بنجاح");
     } catch (e: any) {
       Alert.alert("خطأ", e.message ?? "فشل رفع النسخة الاحتياطية");
@@ -270,7 +258,7 @@ export default function SettingsScreen() {
   async function handleCloudDownload() {
     Alert.alert(
       "استعادة من السحابة",
-      "سيؤدي هذا إلى استبدال جميع بياناتك الحالية ببيانات السحابة. هل تريد المتابعة؟",
+      "سيؤدي هذا إلى استبدال جميع بياناتك الحالية. هل تريد المتابعة؟",
       [
         { text: "إلغاء", style: "cancel" },
         {
@@ -281,10 +269,7 @@ export default function SettingsScreen() {
             try {
               const backup = await downloadBackupFromCloud();
               await importBackup(backup);
-              Alert.alert(
-                "تم ✓",
-                "تمت الاستعادة بنجاح. أعد تشغيل التطبيق لرؤية التغييرات."
-              );
+              Alert.alert("تم ✓", "تمت الاستعادة بنجاح. أعد تشغيل التطبيق.");
             } catch (e: any) {
               Alert.alert("خطأ", e.message ?? "فشل استعادة النسخة الاحتياطية");
             } finally {
@@ -296,7 +281,6 @@ export default function SettingsScreen() {
     );
   }
 
-  // ── Styles ─────────────────────────────────────────────────────────────────
   const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     header: {
@@ -381,14 +365,17 @@ export default function SettingsScreen() {
       fontSize: 10,
       fontFamily: "Inter_600SemiBold",
     },
-    // ── Cloud ──────────────────────────────────────────
     userCard: {
       flexDirection: "row",
       alignItems: "center",
       padding: 14,
       gap: 12,
     },
-    userAvatar: { width: 44, height: 44, borderRadius: 22 },
+    userAvatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+    },
     userAvatarPlaceholder: {
       width: 44,
       height: 44,
@@ -396,7 +383,10 @@ export default function SettingsScreen() {
       alignItems: "center",
       justifyContent: "center",
     },
-    userInfo: { flex: 1, alignItems: "flex-end" },
+    userInfo: {
+      flex: 1,
+      alignItems: "flex-end",
+    },
     userName: {
       fontSize: 15,
       fontFamily: "Inter_600SemiBold",
@@ -414,25 +404,13 @@ export default function SettingsScreen() {
       marginTop: 3,
       textAlign: "right",
     },
-    signInBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 10,
-      margin: 14,
-      paddingVertical: 12,
-      borderRadius: 12,
-      borderWidth: 1.5,
-    },
-    signInBtnText: {
-      fontSize: 14,
-      fontFamily: "Inter_600SemiBold",
-    },
-    cloudActions: {
+    cloudActionsRow: {
       flexDirection: "row",
       gap: 10,
       paddingHorizontal: 14,
       paddingBottom: 14,
+      paddingTop: 14,
+      borderTopWidth: 1,
     },
     cloudBtn: {
       flex: 1,
@@ -465,7 +443,20 @@ export default function SettingsScreen() {
       fontSize: 12,
       fontFamily: "Inter_500Medium",
     },
-    // ── Footer ─────────────────────────────────────────
+    signInBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      margin: 14,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1.5,
+    },
+    signInBtnText: {
+      fontSize: 14,
+      fontFamily: "Inter_600SemiBold",
+    },
     footer: {
       alignItems: "center",
       marginTop: 28,
@@ -479,7 +470,6 @@ export default function SettingsScreen() {
       fontSize: 11,
       fontFamily: "Inter_400Regular",
     },
-    // ── Modals ─────────────────────────────────────────
     modalOverlay: { flex: 1, justifyContent: "flex-end" },
     modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
     modalSheet: {
@@ -602,14 +592,11 @@ export default function SettingsScreen() {
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ══════════════════════════════════════════════
-            الميزانية
-        ══════════════════════════════════════════════ */}
+        {/* الميزانية */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
           الميزانية
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-
           <TouchableOpacity style={s.row} activeOpacity={0.6} onPress={openBudgetModal}>
             <View style={s.rowRight}>
               <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
@@ -664,9 +651,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ══════════════════════════════════════════════
-            العملة واللغة
-        ══════════════════════════════════════════════ */}
+        {/* العملة واللغة */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
           العملة واللغة
         </Text>
@@ -706,9 +691,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ══════════════════════════════════════════════
-            الأمان
-        ══════════════════════════════════════════════ */}
+        {/* الأمان */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>الأمان</Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={s.row}>
@@ -727,9 +710,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* ══════════════════════════════════════════════
-            الإشعارات
-        ══════════════════════════════════════════════ */}
+        {/* الإشعارات */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>الإشعارات</Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={s.row} activeOpacity={1} disabled>
@@ -748,9 +729,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ══════════════════════════════════════════════
-            النسخ الاحتياطي المحلي
-        ══════════════════════════════════════════════ */}
+        {/* النسخ الاحتياطي المحلي */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
           النسخ الاحتياطي المحلي
         </Text>
@@ -798,18 +777,15 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ══════════════════════════════════════════════
-            النسخ الاحتياطي السحابي
-        ══════════════════════════════════════════════ */}
+        {/* النسخ الاحتياطي السحابي */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
           النسخ الاحتياطي السحابي
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {cloudUser ? (
-            <>
-              {/* معلومات المستخدم */}
+          {cloudUser != null ? (
+            <View>
               <View style={s.userCard}>
-                {cloudUser.photoURL ? (
+                {cloudUser.photoURL != null ? (
                   <Image source={{ uri: cloudUser.photoURL }} style={s.userAvatar} />
                 ) : (
                   <View style={[s.userAvatarPlaceholder, { backgroundColor: colors.secondary }]}>
@@ -817,11 +793,246 @@ export default function SettingsScreen() {
                   </View>
                 )}
                 <View style={s.userInfo}>
-                  <Text
-                    style={[s.userName, { color: colors.foreground }]}
-                    numberOfLines={1}
-                  >
+                  <Text style={[s.userName, { color: colors.foreground }]} numberOfLines={1}>
                     {cloudUser.displayName ?? "مستخدم Google"}
                   </Text>
-                  <Text
-                    style={[s.userEmail, { color: colors
+                  <Text style={[s.userEmail, { color: colors.mutedForeground }]} numberOfLines={1}>
+                    {cloudUser.email}
+                  </Text>
+                  <Text style={[s.userBackupDate, { color: colors.mutedForeground }]}>
+                    {lastBackupDate != null
+                      ? `آخر نسخة: ${formatDateTimeAr(lastBackupDate)}`
+                      : "لا توجد نسخة محفوظة بعد"}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[s.cloudActionsRow, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  style={[s.cloudBtn, { backgroundColor: colors.primary }]}
+                  onPress={handleCloudUpload}
+                  disabled={cloudLoading}
+                >
+                  {cloudLoading ? (
+                    <ActivityIndicator size="small" color={colors.primaryForeground} />
+                  ) : (
+                    <Feather name="upload-cloud" size={15} color={colors.primaryForeground} />
+                  )}
+                  <Text style={[s.cloudBtnText, { color: colors.primaryForeground }]}>
+                    رفع للسحابة
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    s.cloudBtn,
+                    {
+                      backgroundColor: colors.secondary,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  onPress={handleCloudDownload}
+                  disabled={cloudLoading}
+                >
+                  {cloudLoading ? (
+                    <ActivityIndicator size="small" color={colors.foreground} />
+                  ) : (
+                    <Feather name="download-cloud" size={15} color={colors.foreground} />
+                  )}
+                  <Text style={[s.cloudBtnText, { color: colors.foreground }]}>
+                    استعادة
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={s.signOutRow}>
+                <TouchableOpacity
+                  style={[s.signOutBtn, { backgroundColor: colors.background }]}
+                  onPress={handleSignOut}
+                  disabled={cloudLoading}
+                >
+                  <Feather name="log-out" size={13} color={colors.destructive} />
+                  <Text style={[s.signOutText, { color: colors.destructive }]}>
+                    قطع الاتصال
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[s.signInBtn, { borderColor: colors.border }]}
+              onPress={handleGoogleSignIn}
+              disabled={cloudLoading}
+            >
+              {cloudLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Feather name="cloud" size={18} color={colors.primary} />
+              )}
+              <Text style={[s.signInBtnText, { color: colors.foreground }]}>
+                {cloudLoading ? "جاري تسجيل الدخول..." : "تسجيل الدخول بـ Google"}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={s.footer}>
+          <Text style={[s.footerText, { color: colors.mutedForeground }]}>مصاريف</Text>
+          <Text style={[s.footerVersion, { color: colors.mutedForeground }]}>الإصدار 2.0</Text>
+        </View>
+      </ScrollView>
+
+      {/* Modal: سقف الإنفاق */}
+      <Modal
+        visible={budgetModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setBudgetModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={s.modalOverlay}
+        >
+          <Pressable
+            style={s.modalBackdrop}
+            onPress={() => setBudgetModalVisible(false)}
+          />
+          <View
+            style={[
+              s.modalSheet,
+              { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 },
+            ]}
+          >
+            <View style={s.modalHandle} />
+            <Text style={[s.modalTitle, { color: colors.foreground }]}>سقف الإنفاق</Text>
+            <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
+              السقف الشهري يُحسب تلقائياً (اليومي × 30) ويمكنك تعديله يدوياً.
+            </Text>
+
+            <View style={s.inputGroup}>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>السقف اليومي</Text>
+              <View
+                style={[
+                  s.inputWrapper,
+                  { borderColor: colors.border, backgroundColor: colors.background },
+                ]}
+              >
+                <TextInput
+                  style={[s.amountInput, { color: colors.foreground }]}
+                  value={dailyInput}
+                  onChangeText={onDailyInputChange}
+                  keyboardType="numeric"
+                  placeholder="أدخل المبلغ"
+                  placeholderTextColor={colors.mutedForeground}
+                  textAlign="right"
+                  autoFocus
+                />
+                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
+              </View>
+            </View>
+
+            <View style={s.inputGroup}>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>السقف الشهري</Text>
+              <View
+                style={[
+                  s.inputWrapper,
+                  { borderColor: colors.border, backgroundColor: colors.background },
+                ]}
+              >
+                <TextInput
+                  style={[s.amountInput, { color: colors.foreground }]}
+                  value={monthlyInput}
+                  onChangeText={(val) => {
+                    setMonthlyInput(val);
+                    setMonthlyEditedManually(true);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="يُحسب تلقائياً"
+                  placeholderTextColor={colors.mutedForeground}
+                  textAlign="right"
+                />
+                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
+              </View>
+              {!monthlyEditedManually && dailyInput.length > 0 && (
+                <Text style={[s.autoNote, { color: colors.mutedForeground }]}>
+                  محسوب تلقائياً ({dailyInput} × 30)
+                </Text>
+              )}
+            </View>
+
+            <View style={s.modalActions}>
+              <TouchableOpacity
+                style={[s.cancelBtn, { borderColor: colors.border }]}
+                onPress={() => setBudgetModalVisible(false)}
+              >
+                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>إلغاء</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.saveBtn, { backgroundColor: colors.primary }]}
+                onPress={saveBudget}
+              >
+                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>حفظ</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Modal: يوم بداية الدورة */}
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <View style={s.modalOverlay}>
+          <Pressable style={s.modalBackdrop} onPress={() => setPickerVisible(false)} />
+          <View
+            style={[
+              s.modalSheet,
+              { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 },
+            ]}
+          >
+            <View style={s.modalHandle} />
+            <Text style={[s.modalTitle, { color: colors.foreground }]}>
+              يوم بداية الدورة
+            </Text>
+            <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
+              سيُطبَّق هذا التغيير على الدورة القادمة فقط، ولن يؤثر على الدورة الحالية.
+            </Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={s.daysGrid}>
+                {DAY_OPTIONS.map((day) => {
+                  const selected = day === cycleStartDay;
+                  return (
+                    <TouchableOpacity
+                      key={day}
+                      style={[
+                        s.dayChip,
+                        {
+                          borderColor: selected ? colors.primary : colors.border,
+                          backgroundColor: selected ? colors.primary : colors.secondary,
+                        },
+                      ]}
+                      onPress={() => chooseDay(day)}
+                    >
+                      <Text
+                        style={[
+                          s.dayChipText,
+                          { color: selected ? colors.primaryForeground : colors.foreground },
+                        ]}
+                      >
+                        {day}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
