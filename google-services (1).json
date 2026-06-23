@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "702480678464",
+    "project_id": "massareef-af374",
+    "storage_bucket": "massareef-af374.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:702480678464:android:0c30339c6ca958470069a5",
+        "android_client_info": {
+          "package_name": "com.hussein.masareef.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "702480678464-jen37rq97mubhev9l3pb6b6shg344hme.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hussein.masareef.dev",
+            "certificate_hash": "64eab36142a4cbf6dff458f385e1904af980e555"
+          }
+        },
+        {
+          "client_id": "702480678464-ajrk7057ogcgvfgo8baebipdb6t2gnrn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfssjj0TxgCLkA9PEBPXmtSM5wafV9s90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "702480678464-ajrk7057ogcgvfgo8baebipdb6t2gnrn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
