@@ -22,7 +22,7 @@ module.exports = {
 
     android: {
       package: "com.hussein.masareef.dev",
-      googleServicesFile: "./android/app/google-services.json",
+      googleServicesFile: "./google-services.json",
       permissions: [
         "NOTIFICATIONS",
         "USE_BIOMETRIC",
