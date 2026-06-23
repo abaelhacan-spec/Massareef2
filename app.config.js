@@ -16,11 +16,13 @@ module.exports = {
     },
 
     ios: {
-      supportsTablet: false
+      supportsTablet: false,
+      bundleIdentifier: "com.hussein.masareef.dev"
     },
 
     android: {
       package: "com.hussein.masareef.dev",
+      googleServicesFile: "./android/app/google-services.json",
       permissions: [
         "NOTIFICATIONS",
         "USE_BIOMETRIC",
@@ -43,7 +45,8 @@ module.exports = {
           defaultChannel: "default"
         }
       ],
-      "expo-local-authentication"
+      "expo-local-authentication",
+      "@react-native-google-signin/google-signin"
     ],
 
     experiments: {
