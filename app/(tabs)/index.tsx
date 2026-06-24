@@ -170,7 +170,10 @@ export default function HomeScreen() {
   const [dailyBudget, setDailyBudgetState] = useState<number>(0);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
 const [calcVisible, setCalcVisible] = useState(false);
-  
+// ── Auto-scroll to today ──────────────────────────────────────────────────
+const scrollViewRef = useRef<ScrollView>(null);
+const todayYOffset = useRef<number | null>(null);
+const hasScrolledToToday = useRef(false);  
   const today = new Date();
   const todayStr = formatDate(today);
 
@@ -220,7 +223,22 @@ const [calcVisible, setCalcVisible] = useState(false);
     }, 60_000);
     return () => clearInterval(interval);
   }, [expenses, bannerDismissed, todayStr]);
+// Scroll to today once after data loads
+useEffect(() => {
+  if (!loading && expenses.length > 0 && !hasScrolledToToday.current) {
+    const timer = setTimeout(() => {
+      if (todayYOffset.current !== null && scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({
+          y: Math.max(0, todayYOffset.current - 100),
+          animated: true,
+        });
+        hasScrolledToToday.current = true;
+      }
+    }, 350);
 
+    return () => clearTimeout(timer);
+  }
+}, [loading, expenses]);
   const stats =
     cycle && expenses.length > 0
       ? computeBudgetStats(
@@ -453,6 +471,7 @@ const [calcVisible, setCalcVisible] = useState(false);
       </View>
 
       <ScrollView
+  ref={scrollViewRef} 
         style={s.scroll}
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
@@ -549,6 +568,13 @@ const [calcVisible, setCalcVisible] = useState(false);
           return (
             <TouchableOpacity
               key={day.date}
+             onLayout={
+  todayFlag
+    ? (e) => {
+        todayYOffset.current = e.nativeEvent.layout.y;
+      }
+    : undefined
+} 
               style={[
                 s.dayRow,
                 {
