@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -659,10 +659,10 @@ useEffect(() => {
     style={{ marginLeft: 8 }}
     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
   >
-    <Feather
-      name="grid"
-      size={20}
-      color={colors.mutedForeground}
+    <Ionicons
+      name="calculator-outline"
+      size={22}
+      color={colors.primary}
     />
   </TouchableOpacity>
 </View>
