@@ -296,23 +296,17 @@ export async function importBackup(backup: BackupData): Promise<void> {
 
 export async function saveBackupToFile(backup: BackupData): Promise<string> {
   const filename = `massareef_backup_${new Date().toISOString().split("T")[0]}.json`;
-  const path = `${FileSystem.documentDirectory}${filename}`;
-  await FileSystem.writeAsStringAsync(path, JSON.stringify(backup, null, 2), {
-    encoding: FileSystem.EncodingType.UTF8,
+  const docDir = (FileSystem as any).documentDirectory as string ?? "";
+  const path = `${docDir}${filename}`;
+  await (FileSystem as any).writeAsStringAsync(path, JSON.stringify(backup, null, 2), {
+    encoding: "utf8",
   });
   return path;
 }
 
 export async function loadBackupFromFile(uri: string): Promise<BackupData> {
-  let content: string;
-  if (uri.startsWith("content://") || uri.startsWith("file://")) {
-    content = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
-  } else {
-    content = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
-  }
+  const content: string = await (FileSystem as any).readAsStringAsync(uri, {
+    encoding: "utf8",
+  });
   return JSON.parse(content) as BackupData;
 }
