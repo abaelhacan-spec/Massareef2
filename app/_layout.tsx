@@ -22,7 +22,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import "@/lib/i18n";
+import { initLanguage } from "@/lib/i18n";
 import { useLanguage } from "@/lib/useLanguage";
 import { getAppLockEnabled, initDB } from "@/lib/database";
 import { initNotifications } from "@/lib/notifications";
@@ -50,6 +50,7 @@ export default function RootLayout() {
   const { t } = useLanguage();
   const [authState, setAuthState] = useState<"loading" | "authenticated" | "locked">("loading");
   const [fontTimeout, setFontTimeout] = useState(false);
+  const [languageReady, setLanguageReady] = useState(false);
   const fontTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Safety: proceed after 4 s even if fonts haven't resolved (avoids eternal white screen on web)
@@ -63,6 +64,12 @@ export default function RootLayout() {
   useEffect(() => {
     initDB().catch(() => {});
     initNotifications().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    initLanguage()
+      .catch(() => {})
+      .finally(() => setLanguageReady(true));
   }, []);
 
   useEffect(() => {
@@ -91,12 +98,12 @@ export default function RootLayout() {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
       if (!hasHardware || !isEnrolled) {
-        // هاتف بدون بصمة → نطلب كلمة مرور/PIN الجهاز
         const result = await LocalAuthentication.authenticateAsync({
           promptMessage: t("auth.password"),
           cancelLabel: t("app.cancel"),
           disableDeviceFallback: false,
         });
+
         if (result.success) {
           setAuthState("authenticated");
         } else {
@@ -105,7 +112,6 @@ export default function RootLayout() {
         return;
       }
 
-      // هاتف ببصمة → نطلب البصمة مع إمكانية الرجوع لكلمة المرور
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: t("auth.fingerprint"),
         fallbackLabel: t("auth.use_password"),
@@ -123,6 +129,7 @@ export default function RootLayout() {
     }
   }
 
+  if (!languageReady) return null;
   if (!fontsLoaded && !fontError && !fontTimeout) return null;
 
   if (authState === "loading") {
