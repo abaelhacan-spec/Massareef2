@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
+import { useLanguage } from "@/lib/useLanguage";
 
 interface CalcModalProps {
   visible: boolean;
@@ -28,6 +29,7 @@ export function CalcModal({
   initialValue = 0,
 }: CalcModalProps) {
   const colors = useColors();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [input, setInput] = useState("");
@@ -281,7 +283,7 @@ export function CalcModal({
         <View style={s.sheet}>
           <View style={s.handle} />
 
-          <Text style={s.title}>🧮 حاسبة الجمع</Text>
+          <Text style={s.title}>{t("calc.title")}</Text>
 
           {/* Input + Add Button */}
           <View style={s.inputRow}>
@@ -302,7 +304,7 @@ export function CalcModal({
                 value={input}
                 onChangeText={setInput}
                 keyboardType="numeric"
-                placeholder="أدخل المبلغ"
+                placeholder={t("calc.enter_amount")}
                 placeholderTextColor={
                   colors.mutedForeground
                 }
@@ -311,23 +313,23 @@ export function CalcModal({
                 autoFocus
               />
 
-              <Text style={s.currency}>دج</Text>
+              <Text style={s.currency}>{t("app.currency")}</Text>
             </View>
           </View>
 
           {/* Items */}
-          <Text style={s.sectionLabel}>العناصر:</Text>
+          <Text style={s.sectionLabel}>{t("calc.items")}</Text>
 
           <View style={s.itemsContainer}>
             {items.length === 0 ? (
               <Text style={s.emptyText}>
-                لا توجد عناصر بعد
+                {t("calc.no_items")}
               </Text>
             ) : (
               items.map((item, index) => (
                 <View key={index} style={s.itemRow}>
                   <Text style={s.itemText}>
-                    {formatAmount(item)} دج
+                    {formatAmount(item)} {t("app.currency")}
                   </Text>
                 </View>
               ))
@@ -337,11 +339,11 @@ export function CalcModal({
           {/* Total */}
           <View style={s.totalRow}>
             <Text style={s.totalValue}>
-              {formatAmount(total)} دج
+              {formatAmount(total)} {t("app.currency")}
             </Text>
 
             <Text style={s.totalLabel}>
-              المجموع:
+              {t("calc.total")}
             </Text>
           </View>
 
@@ -353,7 +355,7 @@ export function CalcModal({
               disabled={items.length === 0}
             >
               <Text style={s.utilBtnText}>
-                حذف آخر عنصر
+                {t("calc.delete_last")}
               </Text>
             </TouchableOpacity>
 
@@ -363,7 +365,7 @@ export function CalcModal({
               disabled={items.length === 0}
             >
               <Text style={s.utilBtnText}>
-                مسح الكل
+                {t("calc.clear_all")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -375,7 +377,7 @@ export function CalcModal({
             disabled={items.length === 0}
           >
             <Text style={s.insertBtnText}>
-              إدراج المجموع
+              {t("calc.insert_total")}
             </Text>
           </TouchableOpacity>
         </View>
