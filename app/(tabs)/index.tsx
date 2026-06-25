@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { useLanguage } from "@/lib/useLanguage";
 import {
   type Cycle,
   type DayExpense,
@@ -51,6 +52,7 @@ function ReminderBanner({
   onDismiss: () => void;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { t } = useLanguage();
   const slideAnim = useRef(new Animated.Value(-120)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -86,7 +88,7 @@ function ReminderBanner({
     }
   }, [visible]);
 
-  if (!visible && opacityAnim.__getValue() === 0) return null;
+  if (!visible) return null;
 
   return (
     <Animated.View
@@ -103,7 +105,7 @@ function ReminderBanner({
         <Text style={bannerStyles.emoji}>💰</Text>
       </View>
       <Text style={bannerStyles.text}>
-        أخي، لا تنسَ تسجيل مصاريفك اليومية لتبقى ميزانيتك في الأمان!
+        {t("home.banner_reminder")}
       </Text>
       <TouchableOpacity onPress={onDismiss} style={bannerStyles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
         <Feather name="x" size={16} color="#ffffff" />
@@ -155,6 +157,7 @@ const bannerStyles = StyleSheet.create({
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const colors = useColors();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -462,7 +465,7 @@ useEffect(() => {
     <View style={s.container}>
       {/* ── Header ── */}
       <View style={s.header}>
-        <Text style={s.headerTitle}>مصاريف</Text>
+        <Text style={s.headerTitle}>{t("app.name")}</Text>
         {cycle && (
           <Text style={s.headerSubtitle}>
             {cycle.name} • {formatDateAr(cycle.start_date)} – {formatDateAr(cycle.end_date)}
@@ -477,7 +480,7 @@ useEffect(() => {
         showsVerticalScrollIndicator={false}
       >
         {loading && (
-          <Text style={[s.loadingText, { color: colors.mutedForeground }]}>جاري التحميل...</Text>
+          <Text style={[s.loadingText, { color: colors.mutedForeground }]}>{t("app.loading")}</Text>
         )}
 
         {/* ── Summary Card ── */}
@@ -490,31 +493,31 @@ useEffect(() => {
                 color={statusColor}
               />
               <Text style={[s.statusText, { color: statusColor }]}>
-                {isGood ? "في الميزانية" : "تجاوزت الميزانية"}
+                {isGood ? t("home.within_budget") : t("home.over_budget")}
               </Text>
             </View>
 
             <View style={s.statsGrid}>
               <View style={[s.statBox, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>المصروف الكلي</Text>
+                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("home.total_spent")}</Text>
                 <Text style={[s.statValue, { color: colors.foreground }]}>
                   {formatAmount(stats.totalSpent)} دج
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>المسموح حتى الآن</Text>
+                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("home.allowed_so_far")}</Text>
                 <Text style={[s.statValue, { color: colors.mutedForeground }]}>
                   {formatAmount(stats.allowedSoFar)} دج
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: statusBg }]}>
-                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>الفرق</Text>
+                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("home.difference")}</Text>
                 <Text style={[s.statValue, { color: statusColor }]}>
                   {stats.difference >= 0 ? "+" : ""}{formatAmount(stats.difference)} دج
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>المتبقي</Text>
+                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("home.remaining")}</Text>
                 <Text style={[s.statValue, { color: stats.remaining >= 0 ? colors.success : colors.destructive }]}>
                   {formatAmount(stats.remaining)} دج
                 </Text>
@@ -524,10 +527,10 @@ useEffect(() => {
             <View style={s.progressSection}>
               <View style={s.progressRow}>
                 <Text style={[s.progressLabelSm, { color: colors.mutedForeground }]}>
-                 {monthlyBudget > 0 ? `${formatAmount(monthlyBudget)} دج` : "غير محدد"} 
+                 {monthlyBudget > 0 ? `${formatAmount(monthlyBudget)} ${t("app.currency")}` : t("app.undefined")} 
                 </Text>
                 <Text style={[s.progressLabel, { color: colors.mutedForeground }]}>
-                  {stats.daysElapsed} / {stats.totalDays} يوم • {Math.round(stats.percentUsed)}%
+                  {stats.daysElapsed} / {stats.totalDays} {t("home.day")} • {Math.round(stats.percentUsed)}%
                 </Text>
               </View>
               <View style={[s.progressBar, { backgroundColor: colors.border }]}>
@@ -546,9 +549,9 @@ useEffect(() => {
         {expenses.length > 0 && (
           <View style={s.sectionHeader}>
             <Text style={[s.sectionSub, { color: colors.mutedForeground }]}>
-             {dailyBudget > 0 ? `${formatAmount(dailyBudget)} دج / يوم` : "لم يُحدد سقف"} 
+             {dailyBudget > 0 ? `${formatAmount(dailyBudget)} ${t("app.currency")} / ${t("home.day")}` : t("home.no_limit_set")} 
             </Text>
-            <Text style={[s.sectionTitle, { color: colors.foreground }]}>أيام الدورة</Text>
+            <Text style={[s.sectionTitle, { color: colors.foreground }]}>{t("home.period_days")}</Text>
           </View>
         )}
 
@@ -591,7 +594,7 @@ useEffect(() => {
                   <Text style={[s.dayName, { color: colors.foreground }]}>
                     {getDayNameAr(day.date)}
                     {todayFlag ? (
-                      <Text style={[s.todayBadge, { color: colors.primary }]}> • اليوم</Text>
+                      <Text style={[s.todayBadge, { color: colors.primary }]}> • {t("app.today")}</Text>
                     ) : null}
                   </Text>
                   <Text style={[s.dayDate, { color: colors.mutedForeground }]}>
@@ -603,7 +606,7 @@ useEffect(() => {
               <View style={s.dayRight}>
                 <Feather name="edit-2" size={13} color={colors.mutedForeground} style={{ marginRight: 6 }} />
                 <Text style={[s.dayAmount, { color: amtColor }]}>
-                 {day.is_entered ? `${formatAmount(day.amount)} دج` : "— دج"}
+                 {day.is_entered ? `${formatAmount(day.amount)} ${t("app.currency")}` : t("home.empty_amount")}
              </Text>
               </View>
             </TouchableOpacity>
@@ -652,7 +655,7 @@ useEffect(() => {
     selectTextOnFocus
   />
 
-  <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
+  <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>{t("app.currency")}</Text>
 
   <TouchableOpacity
     onPress={() => setCalcVisible(true)}
@@ -686,13 +689,13 @@ useEffect(() => {
                 style={[s.cancelBtn, { borderColor: colors.border }]}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>إلغاء</Text>
+                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>{t("app.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.saveBtn, { backgroundColor: colors.primary }]}
                 onPress={saveAmount}
               >
-                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>حفظ</Text>
+                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>{t("app.save")}</Text>
               </TouchableOpacity>
             </View>
           </View>
