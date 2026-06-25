@@ -22,6 +22,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { useLanguage } from "@/lib/useLanguage";
 import {
   downloadBackupFromCloud,
   getGoogleSignInError,
@@ -65,6 +66,7 @@ function formatDateTimeAr(iso: string): string {
 
 export default function SettingsScreen() {
   const colors = useColors();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [cycleStartDay, setCycleStartDayState] = useState(6);
@@ -137,11 +139,11 @@ export default function SettingsScreen() {
     const daily = parseFloat(dailyInput);
     const monthly = parseFloat(monthlyInput);
     if (isNaN(daily) || daily <= 0) {
-      Alert.alert("خطأ", "يرجى إدخال سقف إنفاق يومي صحيح");
+      Alert.alert(t("app.error"), t("settings.invalid_daily_limit"));
       return;
     }
     if (isNaN(monthly) || monthly <= 0) {
-      Alert.alert("خطأ", "يرجى إدخال سقف إنفاق شهري صحيح");
+      Alert.alert(t("app.error"), t("settings.invalid_monthly_limit"));
       return;
     }
     await setDailyBudget(daily);
@@ -164,13 +166,13 @@ export default function SettingsScreen() {
       if (canShare) {
         await Sharing.shareAsync(path, {
           mimeType: "application/json",
-          dialogTitle: "حفظ النسخة الاحتياطية",
+          dialogTitle: t("settings.backup"),
         });
       } else {
-        Alert.alert("تم", `تم حفظ الملف في:\n${path}`);
+        Alert.alert(t("app.done"), `تم حفظ الملف في:\n${path}`);
       }
     } catch (e: any) {
-      Alert.alert("خطأ", e.message ?? "فشل تصدير النسخة الاحتياطية");
+      Alert.alert(t("app.error"), e.message ?? t("settings.backup_export_fail"));
     } finally {
       setLocalLoading(false);
     }
@@ -178,12 +180,12 @@ export default function SettingsScreen() {
 
   async function handleLocalImport() {
     Alert.alert(
-      "تحذير",
-      "سيؤدي هذا إلى استبدال جميع بياناتك الحالية. هل تريد المتابعة؟",
+      t("app.warning"),
+      t("settings.restore_confirm"),
       [
-        { text: "إلغاء", style: "cancel" },
+        { text: t("app.cancel"), style: "cancel" },
         {
-          text: "متابعة",
+          text: t("app.confirm"),
           style: "destructive",
           onPress: async () => {
             setLocalLoading(true);
@@ -196,9 +198,9 @@ export default function SettingsScreen() {
               const file = result.assets[0];
               const backup = await loadBackupFromFile(file.uri);
               await importBackup(backup);
-              Alert.alert("تم", "تمت استعادة البيانات بنجاح. أعد تشغيل التطبيق.");
+              Alert.alert(t("app.done"), t("settings.restore_success_file"));
             } catch (e: any) {
-              Alert.alert("خطأ", e.message ?? "فشل استيراد النسخة الاحتياطية");
+              Alert.alert(t("app.error"), e.message ?? t("settings.import_fail"));
             } finally {
               setLocalLoading(false);
             }
@@ -215,24 +217,24 @@ export default function SettingsScreen() {
       const date = await getLastCloudBackupDate();
       setLastBackupDate(date);
     } catch (e) {
-      Alert.alert("خطأ", getGoogleSignInError(e));
+      Alert.alert(t("app.error"), getGoogleSignInError(e));
     } finally {
       setCloudLoading(false);
     }
   }
 
   async function handleSignOut() {
-    Alert.alert("تسجيل الخروج", "هل تريد قطع الاتصال بحساب Google؟", [
-      { text: "إلغاء", style: "cancel" },
+    Alert.alert(t("settings.logout"), t("settings.disconnect_google"), [
+      { text: t("app.cancel"), style: "cancel" },
       {
-        text: "خروج",
+        text: t("settings.logout"),
         style: "destructive",
         onPress: async () => {
           setCloudLoading(true);
           try {
             await signOutGoogle();
           } catch (e: any) {
-            Alert.alert("خطأ", e.message);
+            Alert.alert(t("app.error"), e.message);
           } finally {
             setCloudLoading(false);
           }
@@ -247,9 +249,9 @@ export default function SettingsScreen() {
       const backup = await exportBackup();
       await uploadBackupToCloud(backup);
       setLastBackupDate(new Date().toISOString());
-      Alert.alert("تم ✓", "تم رفع النسخة الاحتياطية إلى السحابة بنجاح");
+      Alert.alert(t("app.done_check"), t("settings.backup_success"));
     } catch (e: any) {
-      Alert.alert("خطأ", e.message ?? "فشل رفع النسخة الاحتياطية");
+      Alert.alert(t("app.error"), e.message ?? t("settings.backup_upload_fail"));
     } finally {
       setCloudLoading(false);
     }
@@ -257,21 +259,21 @@ export default function SettingsScreen() {
 
   async function handleCloudDownload() {
     Alert.alert(
-      "استعادة من السحابة",
-      "سيؤدي هذا إلى استبدال جميع بياناتك الحالية. هل تريد المتابعة؟",
+      t("settings.restore_cloud"),
+      t("settings.restore_confirm"),
       [
-        { text: "إلغاء", style: "cancel" },
+        { text: t("app.cancel"), style: "cancel" },
         {
-          text: "استعادة",
+          text: t("settings.restore"),
           style: "destructive",
           onPress: async () => {
             setCloudLoading(true);
             try {
               const backup = await downloadBackupFromCloud();
               await importBackup(backup);
-              Alert.alert("تم ✓", "تمت الاستعادة بنجاح. أعد تشغيل التطبيق.");
+              Alert.alert(t("app.done_check"), t("settings.restore_success"));
             } catch (e: any) {
-              Alert.alert("خطأ", e.message ?? "فشل استعادة النسخة الاحتياطية");
+              Alert.alert(t("app.error"), e.message ?? t("settings.restore_fail"));
             } finally {
               setCloudLoading(false);
             }
@@ -583,8 +585,8 @@ export default function SettingsScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <Text style={s.headerTitle}>الإعدادات</Text>
-        <Text style={s.headerSubtitle}>تخصيص مصاريف</Text>
+        <Text style={s.headerTitle}>{t("settings.title")}</Text>
+        <Text style={s.headerSubtitle}>{t("settings.customize_expenses")}</Text>
       </View>
 
       <ScrollView
@@ -594,18 +596,18 @@ export default function SettingsScreen() {
       >
         {/* الميزانية */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
-          الميزانية
+          {t("settings.spending_limit")}
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={s.row} activeOpacity={0.6} onPress={openBudgetModal}>
             <View style={s.rowRight}>
               <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {dailyBudget > 0 ? `${formatAmount(dailyBudget)} دج` : "غير محدد"}
+                {dailyBudget > 0 ? `${formatAmount(dailyBudget)} ${t("app.currency")}` : t("app.undefined")}
               </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>سقف الإنفاق اليومي</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.daily_limit")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="calendar" size={16} color={colors.primary} />
               </View>
@@ -620,11 +622,11 @@ export default function SettingsScreen() {
             <View style={s.rowRight}>
               <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {monthlyBudget > 0 ? `${formatAmount(monthlyBudget)} دج` : "غير محدد"}
+                {monthlyBudget > 0 ? `${formatAmount(monthlyBudget)} ${t("app.currency")}` : t("app.undefined")}
               </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>سقف الإنفاق الشهري</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.monthly_limit")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="pie-chart" size={16} color={colors.primary} />
               </View>
@@ -643,7 +645,7 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>يوم بداية الدورة</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.cycle_start_day")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="rotate-cw" size={16} color={colors.primary} />
               </View>
@@ -653,18 +655,18 @@ export default function SettingsScreen() {
 
         {/* العملة واللغة */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
-          العملة واللغة
+          {t("settings.currency_and_language")}
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={s.row} activeOpacity={1} disabled>
             <View style={s.rowRight}>
               <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>{t("app.soon")}</Text>
               </View>
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>دج (DZD)</Text>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>{t("app.currency_dzd")}</Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>العملة</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.currency")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="dollar-sign" size={16} color={colors.primary} />
               </View>
@@ -678,12 +680,12 @@ export default function SettingsScreen() {
           >
             <View style={s.rowRight}>
               <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>{t("app.soon")}</Text>
               </View>
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>العربية</Text>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>{t("settings.arabic")}</Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>اللغة</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.language")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="globe" size={16} color={colors.primary} />
               </View>
@@ -692,7 +694,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* الأمان */}
-        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>الأمان</Text>
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>{t("settings.security")}</Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={s.row}>
             <Switch
@@ -702,7 +704,7 @@ export default function SettingsScreen() {
               thumbColor={colors.primaryForeground}
             />
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>قفل التطبيق</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.app_lock")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="lock" size={16} color={colors.primary} />
               </View>
@@ -711,17 +713,17 @@ export default function SettingsScreen() {
         </View>
 
         {/* الإشعارات */}
-        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>الإشعارات</Text>
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>{t("settings.notifications")}</Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={s.row} activeOpacity={1} disabled>
             <View style={s.rowRight}>
               <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>قريباً</Text>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>{t("app.soon")}</Text>
               </View>
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>21:00</Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>وقت التذكير اليومي</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.daily_reminder")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="bell" size={16} color={colors.primary} />
               </View>
@@ -731,7 +733,7 @@ export default function SettingsScreen() {
 
         {/* النسخ الاحتياطي المحلي */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
-          النسخ الاحتياطي المحلي
+          {t("settings.local_backup")}
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity
@@ -748,7 +750,7 @@ export default function SettingsScreen() {
               )}
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>تصدير نسخة احتياطية</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.export_backup")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="upload" size={16} color={colors.primary} />
               </View>
@@ -769,7 +771,7 @@ export default function SettingsScreen() {
               )}
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>استعادة من ملف</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.restore_file")}</Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="download" size={16} color={colors.primary} />
               </View>
@@ -779,7 +781,7 @@ export default function SettingsScreen() {
 
         {/* النسخ الاحتياطي السحابي */}
         <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
-          النسخ الاحتياطي السحابي
+          {t("settings.cloud_backup")}
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {cloudUser != null ? (
@@ -794,15 +796,15 @@ export default function SettingsScreen() {
                 )}
                 <View style={s.userInfo}>
                   <Text style={[s.userName, { color: colors.foreground }]} numberOfLines={1}>
-                    {cloudUser.displayName ?? "مستخدم Google"}
+                    {cloudUser.displayName ?? t("settings.google_user")}
                   </Text>
                   <Text style={[s.userEmail, { color: colors.mutedForeground }]} numberOfLines={1}>
                     {cloudUser.email}
                   </Text>
                   <Text style={[s.userBackupDate, { color: colors.mutedForeground }]}>
                     {lastBackupDate != null
-                      ? `آخر نسخة: ${formatDateTimeAr(lastBackupDate)}`
-                      : "لا توجد نسخة محفوظة بعد"}
+                      ? `${t("settings.last_backup")}: ${formatDateTimeAr(lastBackupDate)}`
+                      : t("settings.no_backup_yet")}
                   </Text>
                 </View>
               </View>
@@ -819,7 +821,7 @@ export default function SettingsScreen() {
                     <Feather name="upload-cloud" size={15} color={colors.primaryForeground} />
                   )}
                   <Text style={[s.cloudBtnText, { color: colors.primaryForeground }]}>
-                    رفع للسحابة
+                    {t("settings.upload_cloud")}
                   </Text>
                 </TouchableOpacity>
 
@@ -841,7 +843,7 @@ export default function SettingsScreen() {
                     <Feather name="download-cloud" size={15} color={colors.foreground} />
                   )}
                   <Text style={[s.cloudBtnText, { color: colors.foreground }]}>
-                    استعادة
+                    {t("settings.restore")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -854,7 +856,7 @@ export default function SettingsScreen() {
                 >
                   <Feather name="log-out" size={13} color={colors.destructive} />
                   <Text style={[s.signOutText, { color: colors.destructive }]}>
-                    قطع الاتصال
+                    {t("settings.disconnect")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -871,15 +873,15 @@ export default function SettingsScreen() {
                 <Feather name="cloud" size={18} color={colors.primary} />
               )}
               <Text style={[s.signInBtnText, { color: colors.foreground }]}>
-                {cloudLoading ? "جاري تسجيل الدخول..." : "تسجيل الدخول بـ Google"}
+                {cloudLoading ? t("settings.logging_in") : t("settings.google_login")}
               </Text>
             </TouchableOpacity>
           )}
         </View>
 
         <View style={s.footer}>
-          <Text style={[s.footerText, { color: colors.mutedForeground }]}>مصاريف</Text>
-          <Text style={[s.footerVersion, { color: colors.mutedForeground }]}>الإصدار 2.0</Text>
+          <Text style={[s.footerText, { color: colors.mutedForeground }]}>{t("app.name")}</Text>
+          <Text style={[s.footerVersion, { color: colors.mutedForeground }]}>{t("app.version")}</Text>
         </View>
       </ScrollView>
 
@@ -905,13 +907,13 @@ export default function SettingsScreen() {
             ]}
           >
             <View style={s.modalHandle} />
-            <Text style={[s.modalTitle, { color: colors.foreground }]}>سقف الإنفاق</Text>
+            <Text style={[s.modalTitle, { color: colors.foreground }]}>{t("settings.spending_limit")}</Text>
             <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
-              السقف الشهري يُحسب تلقائياً (اليومي × 30) ويمكنك تعديله يدوياً.
+              {t("settings.monthly_auto_note")}
             </Text>
 
             <View style={s.inputGroup}>
-              <Text style={[s.inputLabel, { color: colors.foreground }]}>السقف اليومي</Text>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>{t("settings.daily_limit_label")}</Text>
               <View
                 style={[
                   s.inputWrapper,
@@ -923,17 +925,17 @@ export default function SettingsScreen() {
                   value={dailyInput}
                   onChangeText={onDailyInputChange}
                   keyboardType="numeric"
-                  placeholder="أدخل المبلغ"
+                  placeholder={t("settings.enter_amount")}
                   placeholderTextColor={colors.mutedForeground}
                   textAlign="right"
                   autoFocus
                 />
-                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
+                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>{t("app.currency")}</Text>
               </View>
             </View>
 
             <View style={s.inputGroup}>
-              <Text style={[s.inputLabel, { color: colors.foreground }]}>السقف الشهري</Text>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>{t("settings.monthly_limit_label")}</Text>
               <View
                 style={[
                   s.inputWrapper,
@@ -948,15 +950,15 @@ export default function SettingsScreen() {
                     setMonthlyEditedManually(true);
                   }}
                   keyboardType="numeric"
-                  placeholder="يُحسب تلقائياً"
+                  placeholder={t("app.auto_calculated")}
                   placeholderTextColor={colors.mutedForeground}
                   textAlign="right"
                 />
-                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>دج</Text>
+                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>{t("app.currency")}</Text>
               </View>
               {!monthlyEditedManually && dailyInput.length > 0 && (
                 <Text style={[s.autoNote, { color: colors.mutedForeground }]}>
-                  محسوب تلقائياً ({dailyInput} × 30)
+                  {t("settings.auto_calculated_note", { daily: dailyInput })}
                 </Text>
               )}
             </View>
@@ -966,13 +968,13 @@ export default function SettingsScreen() {
                 style={[s.cancelBtn, { borderColor: colors.border }]}
                 onPress={() => setBudgetModalVisible(false)}
               >
-                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>إلغاء</Text>
+                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>{t("app.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.saveBtn, { backgroundColor: colors.primary }]}
                 onPress={saveBudget}
               >
-                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>حفظ</Text>
+                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>{t("app.save")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -996,10 +998,10 @@ export default function SettingsScreen() {
           >
             <View style={s.modalHandle} />
             <Text style={[s.modalTitle, { color: colors.foreground }]}>
-              يوم بداية الدورة
+              {t("settings.cycle_start_day")}
             </Text>
             <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
-              سيُطبَّق هذا التغيير على الدورة القادمة فقط، ولن يؤثر على الدورة الحالية.
+              {t("settings.cycle_change_note")}
             </Text>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={s.daysGrid}>
