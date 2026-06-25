@@ -14,11 +14,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { useLanguage } from "@/lib/useLanguage";
 import { type Cycle, type DayExpense, getAllCycles, getExpensesForCycle, getMonthlyBudget } from "@/lib/database";
 import { DAILY_BUDGET, TOTAL_BUDGET, formatDateAr, getDayNameAr } from "@/lib/budget";
 
 export default function HistoryScreen() {
   const colors = useColors();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [cycles, setCycles] = useState<(Cycle & { total_spent: number })[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -218,8 +220,8 @@ export default function HistoryScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <Text style={s.headerTitle}>سجل الدورات</Text>
-        <Text style={s.headerSubtitle}>{cycles.length} دورة</Text>
+        <Text style={s.headerTitle}>{t("history.title")}</Text>
+        <Text style={s.headerSubtitle}>{cycles.length} {t("history.cycle_count")}</Text>
       </View>
 
       <ScrollView
@@ -237,7 +239,7 @@ export default function HistoryScreen() {
         {cycles.length === 0 && !refreshing && (
           <View style={s.emptyState}>
             <Feather name="inbox" size={48} color={colors.border} />
-            <Text style={[s.emptyText, { color: colors.mutedForeground }]}>لا توجد دورات بعد</Text>
+            <Text style={[s.emptyText, { color: colors.mutedForeground }]}>{t("history.no_cycles")}</Text>
           </View>
         )}
 
@@ -256,13 +258,13 @@ export default function HistoryScreen() {
             >
               <View style={s.cardTop}>
                 <Text style={[s.cycleTotal, { color: isOver ? colors.destructive : colors.foreground }]}>
-                  {formatAmount(cycle.total_spent)} دج
+                  {formatAmount(cycle.total_spent)} {t("app.currency")}
                 </Text>
                 <View style={s.nameRow}>
                   {isActive && (
                     <View style={[s.activeBadge, { backgroundColor: colors.primary }]}>
                       <Text style={[s.activeBadgeText, { color: colors.primaryForeground }]}>
-                        جارية
+                        {t("history.active")}
                       </Text>
                     </View>
                   )}
@@ -285,19 +287,19 @@ export default function HistoryScreen() {
 
               <View style={s.statsRow}>
                 <View style={s.stat}>
-                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>النسبة</Text>
+                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("history.percentage")}</Text>
                   <Text style={[s.statValue, { color: statusColor }]}>{Math.round(pct)}%</Text>
                 </View>
                 <View style={s.stat}>
-                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>المتبقي</Text>
+                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("history.remaining")}</Text>
                   <Text style={[s.statValue, { color: statusColor }]}>
-                    {formatAmount(TOTAL_BUDGET - cycle.total_spent)} دج
+                    {formatAmount(TOTAL_BUDGET - cycle.total_spent)} {t("app.currency")}
                   </Text>
                 </View>
                 <View style={s.stat}>
-                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>الحد الأقصى</Text>
+                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("history.max")}</Text>
                   <Text style={[s.statValue, { color: colors.mutedForeground }]}>
-                    {formatAmount(TOTAL_BUDGET)} دج
+                    {formatAmount(TOTAL_BUDGET)} {t("app.currency")}
                   </Text>
                 </View>
               </View>
@@ -305,7 +307,7 @@ export default function HistoryScreen() {
               <View style={[s.tapHint, { borderTopColor: colors.border }]}>
                 <Feather name="list" size={12} color={colors.mutedForeground} />
                 <Text style={[s.tapHintText, { color: colors.mutedForeground }]}>
-                  اضغط لعرض التفاصيل اليومية
+                  {t("history.tap_hint")}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -342,7 +344,7 @@ export default function HistoryScreen() {
             </View>
 
             {loadingDetail ? (
-              <Text style={[s.loadingText, { color: colors.mutedForeground }]}>جاري التحميل...</Text>
+              <Text style={[s.loadingText, { color: colors.mutedForeground }]}>{t("app.loading")}</Text>
             ) : (
               <>
                 {(() => {
@@ -353,36 +355,23 @@ export default function HistoryScreen() {
                     <View style={[s.summaryBox, { backgroundColor: colors.secondary }]}>
                       <View style={s.summaryItem}>
                         <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
-                          {!hasSurplus ? "الفائض/العجز" : isSurplus ? "الفائض" : "العجز"}
+                          {!hasSurplus ? t("history.surplus_deficit") : isSurplus ? t("history.surplus") : t("history.deficit")}
                         </Text>
-                        <Text
-                          style={[
-                            s.summaryValue,
-                            {
-                              color: !hasSurplus
-                                ? colors.mutedForeground
-                                : isSurplus
-                                ? colors.success
-                                : colors.destructive,
-                            },
-                          ]}
-                        >
-                          {!hasSurplus
-                            ? "—"
-                            : `${isSurplus ? "+" : ""}${formatAmount(summary.surplus as number)} دج`}
+                        <Text style={[s.summaryValue, { color: !hasSurplus ? colors.mutedForeground : isSurplus ? colors.success : colors.destructive }]}>
+                          {!hasSurplus ? "—" : `${isSurplus ? "+" : ""}${formatAmount(summary.surplus as number)} ${t("app.currency")}`}
                         </Text>
                       </View>
                       <View style={s.summaryItem}>
                         <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
-                          المتوسط اليومي
+                          {t("history.daily_average")}
                         </Text>
                         <Text style={[s.summaryValue, { color: colors.foreground }]}>
-                          {formatAmount(summary.dailyAverage)} دج
+                          {formatAmount(summary.dailyAverage)} {t("app.currency")}
                         </Text>
                       </View>
                       <View style={s.summaryItem}>
                         <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
-                          أيام بدون صرف
+                          {t("history.zero_days")}
                         </Text>
                         <Text style={[s.summaryValue, { color: colors.success }]}>
                           {summary.zeroDays}
@@ -416,7 +405,7 @@ export default function HistoryScreen() {
                           </Text>
                         </View>
                         <Text style={[s.dayAmount, { color: amtColor }]}>
-                          {formatAmount(day.amount)} دج
+                          {formatAmount(day.amount)} {t("app.currency")}
                         </Text>
                       </View>
                     );
@@ -429,7 +418,7 @@ export default function HistoryScreen() {
               style={[s.closeBtn, { backgroundColor: colors.secondary }]}
               onPress={closeDetail}
             >
-              <Text style={[s.closeBtnText, { color: colors.foreground }]}>إغلاق</Text>
+              <Text style={[s.closeBtnText, { color: colors.foreground }]}>{t("app.close")}</Text>
             </TouchableOpacity>
           </View>
         </View>
