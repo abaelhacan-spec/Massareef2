@@ -23,6 +23,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import { useLanguage } from "@/lib/useLanguage";
+import { useDirection } from "@/hooks/useDirection";
+import type { SupportedLanguage } from "@/lib/i18n";
 import {
   downloadBackupFromCloud,
   getGoogleSignInError,
@@ -46,13 +48,20 @@ import {
   setDailyBudget,
   setMonthlyBudget,
 } from "@/lib/database";
+import { formatNumber } from "@/lib/budget";
 
 const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
 
-function formatDateTimeAr(iso: string): string {
+const LANGUAGE_OPTIONS: { code: SupportedLanguage; nativeName: string }[] = [
+  { code: "ar", nativeName: "العربية" },
+  { code: "en", nativeName: "English" },
+  { code: "fr", nativeName: "Français" },
+];
+
+function formatDateTimeLocale(iso: string, locale: string): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleString("ar-DZ", {
+    return d.toLocaleString(locale, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -66,11 +75,13 @@ function formatDateTimeAr(iso: string): string {
 
 export default function SettingsScreen() {
   const colors = useColors();
-  const { t } = useLanguage();
+  const { t, language, changeLanguage } = useLanguage();
+  const dir = useDirection();
   const insets = useSafeAreaInsets();
 
   const [cycleStartDay, setCycleStartDayState] = useState(6);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [langPickerVisible, setLangPickerVisible] = useState(false);
   const [appLockEnabled, setAppLockEnabledState] = useState(false);
   const [dailyBudget, setDailyBudgetState] = useState(0);
   const [monthlyBudget, setMonthlyBudgetState] = useState(0);
@@ -153,10 +164,6 @@ export default function SettingsScreen() {
     setBudgetModalVisible(false);
   }
 
-  function formatAmount(n: number) {
-    return Math.round(n).toLocaleString("ar-DZ");
-  }
-
   async function handleLocalExport() {
     setLocalLoading(true);
     try {
@@ -169,7 +176,7 @@ export default function SettingsScreen() {
           dialogTitle: t("settings.backup"),
         });
       } else {
-        Alert.alert(t("app.done"), `تم حفظ الملف في:\n${path}`);
+        Alert.alert(t("app.done"), `${path}`);
       }
     } catch (e: any) {
       Alert.alert(t("app.error"), e.message ?? t("settings.backup_export_fail"));
@@ -179,35 +186,31 @@ export default function SettingsScreen() {
   }
 
   async function handleLocalImport() {
-    Alert.alert(
-      t("app.warning"),
-      t("settings.restore_confirm"),
-      [
-        { text: t("app.cancel"), style: "cancel" },
-        {
-          text: t("app.confirm"),
-          style: "destructive",
-          onPress: async () => {
-            setLocalLoading(true);
-            try {
-              const result = await DocumentPicker.getDocumentAsync({
-                type: "application/json",
-                copyToCacheDirectory: true,
-              });
-              if (result.canceled) return;
-              const file = result.assets[0];
-              const backup = await loadBackupFromFile(file.uri);
-              await importBackup(backup);
-              Alert.alert(t("app.done"), t("settings.restore_success_file"));
-            } catch (e: any) {
-              Alert.alert(t("app.error"), e.message ?? t("settings.import_fail"));
-            } finally {
-              setLocalLoading(false);
-            }
-          },
+    Alert.alert(t("app.warning"), t("settings.restore_confirm"), [
+      { text: t("app.cancel"), style: "cancel" },
+      {
+        text: t("app.confirm"),
+        style: "destructive",
+        onPress: async () => {
+          setLocalLoading(true);
+          try {
+            const result = await DocumentPicker.getDocumentAsync({
+              type: "application/json",
+              copyToCacheDirectory: true,
+            });
+            if (result.canceled) return;
+            const file = result.assets[0];
+            const backup = await loadBackupFromFile(file.uri);
+            await importBackup(backup);
+            Alert.alert(t("app.done"), t("settings.restore_success_file"));
+          } catch (e: any) {
+            Alert.alert(t("app.error"), e.message ?? t("settings.import_fail"));
+          } finally {
+            setLocalLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }
 
   async function handleGoogleSignIn() {
@@ -258,30 +261,32 @@ export default function SettingsScreen() {
   }
 
   async function handleCloudDownload() {
-    Alert.alert(
-      t("settings.restore_cloud"),
-      t("settings.restore_confirm"),
-      [
-        { text: t("app.cancel"), style: "cancel" },
-        {
-          text: t("settings.restore"),
-          style: "destructive",
-          onPress: async () => {
-            setCloudLoading(true);
-            try {
-              const backup = await downloadBackupFromCloud();
-              await importBackup(backup);
-              Alert.alert(t("app.done_check"), t("settings.restore_success"));
-            } catch (e: any) {
-              Alert.alert(t("app.error"), e.message ?? t("settings.restore_fail"));
-            } finally {
-              setCloudLoading(false);
-            }
-          },
+    Alert.alert(t("settings.restore_cloud"), t("settings.restore_confirm"), [
+      { text: t("app.cancel"), style: "cancel" },
+      {
+        text: t("settings.restore"),
+        style: "destructive",
+        onPress: async () => {
+          setCloudLoading(true);
+          try {
+            const backup = await downloadBackupFromCloud();
+            await importBackup(backup);
+            Alert.alert(t("app.done_check"), t("settings.restore_success"));
+          } catch (e: any) {
+            Alert.alert(
+              t("app.error"),
+              e.message ?? t("settings.restore_fail")
+            );
+          } finally {
+            setCloudLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }
+
+  const currentLangName =
+    LANGUAGE_OPTIONS.find((l) => l.code === language)?.nativeName ?? language;
 
   const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
@@ -291,14 +296,14 @@ export default function SettingsScreen() {
       backgroundColor: colors.card,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      alignItems: "flex-end",
+      alignItems: dir.alignSelf,
       paddingTop: Platform.OS === "web" ? 67 : insets.top + 12,
     },
     headerTitle: {
       fontSize: 24,
       fontFamily: "Inter_700Bold",
       color: colors.foreground,
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
     headerSubtitle: {
       fontSize: 13,
@@ -314,18 +319,15 @@ export default function SettingsScreen() {
     sectionTitle: {
       fontSize: 13,
       fontFamily: "Inter_600SemiBold",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       marginBottom: 8,
       marginTop: 18,
-      marginRight: 4,
+      marginRight: dir.isRTL ? 4 : 0,
+      marginLeft: dir.isRTL ? 0 : 4,
     },
-    card: {
-      borderRadius: 14,
-      borderWidth: 1,
-      overflow: "hidden",
-    },
+    card: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
     row: {
-      flexDirection: "row",
+      flexDirection: dir.flexRow,
       alignItems: "center",
       justifyContent: "space-between",
       paddingHorizontal: 14,
@@ -347,37 +349,22 @@ export default function SettingsScreen() {
     rowLabel: {
       fontSize: 14,
       fontFamily: "Inter_500Medium",
-      textAlign: "right",
     },
     rowRight: {
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
     },
-    rowValue: {
-      fontSize: 13,
-      fontFamily: "Inter_400Regular",
-    },
-    soonBadge: {
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 8,
-    },
-    soonText: {
-      fontSize: 10,
-      fontFamily: "Inter_600SemiBold",
-    },
+    rowValue: { fontSize: 13, fontFamily: "Inter_400Regular" },
+    soonBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+    soonText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
     userCard: {
       flexDirection: "row",
       alignItems: "center",
       padding: 14,
       gap: 12,
     },
-    userAvatar: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-    },
+    userAvatar: { width: 44, height: 44, borderRadius: 22 },
     userAvatarPlaceholder: {
       width: 44,
       height: 44,
@@ -385,26 +372,23 @@ export default function SettingsScreen() {
       alignItems: "center",
       justifyContent: "center",
     },
-    userInfo: {
-      flex: 1,
-      alignItems: "flex-end",
-    },
+    userInfo: { flex: 1, alignItems: dir.alignSelf },
     userName: {
       fontSize: 15,
       fontFamily: "Inter_600SemiBold",
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
     userEmail: {
       fontSize: 12,
       fontFamily: "Inter_400Regular",
       marginTop: 2,
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
     userBackupDate: {
       fontSize: 11,
       fontFamily: "Inter_400Regular",
       marginTop: 3,
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
     cloudActionsRow: {
       flexDirection: "row",
@@ -423,13 +407,10 @@ export default function SettingsScreen() {
       paddingVertical: 11,
       borderRadius: 10,
     },
-    cloudBtnText: {
-      fontSize: 13,
-      fontFamily: "Inter_600SemiBold",
-    },
+    cloudBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
     signOutRow: {
       flexDirection: "row",
-      justifyContent: "flex-start",
+      justifyContent: dir.isRTL ? "flex-end" : "flex-start",
       paddingHorizontal: 14,
       paddingBottom: 14,
     },
@@ -441,10 +422,7 @@ export default function SettingsScreen() {
       paddingHorizontal: 10,
       borderRadius: 8,
     },
-    signOutText: {
-      fontSize: 12,
-      fontFamily: "Inter_500Medium",
-    },
+    signOutText: { fontSize: 12, fontFamily: "Inter_500Medium" },
     signInBtn: {
       flexDirection: "row",
       alignItems: "center",
@@ -455,23 +433,10 @@ export default function SettingsScreen() {
       borderRadius: 12,
       borderWidth: 1.5,
     },
-    signInBtnText: {
-      fontSize: 14,
-      fontFamily: "Inter_600SemiBold",
-    },
-    footer: {
-      alignItems: "center",
-      marginTop: 28,
-      gap: 4,
-    },
-    footerText: {
-      fontSize: 12,
-      fontFamily: "Inter_400Regular",
-    },
-    footerVersion: {
-      fontSize: 11,
-      fontFamily: "Inter_400Regular",
-    },
+    signInBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+    footer: { alignItems: "center", marginTop: 28, gap: 4 },
+    footerText: { fontSize: 12, fontFamily: "Inter_400Regular" },
+    footerVersion: { fontSize: 11, fontFamily: "Inter_400Regular" },
     modalOverlay: { flex: 1, justifyContent: "flex-end" },
     modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
     modalSheet: {
@@ -492,19 +457,19 @@ export default function SettingsScreen() {
     modalTitle: {
       fontSize: 18,
       fontFamily: "Inter_700Bold",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       marginBottom: 4,
     },
     modalNote: {
       fontSize: 12,
       fontFamily: "Inter_400Regular",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       marginBottom: 14,
     },
     daysGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      justifyContent: "flex-end",
+      justifyContent: dir.isRTL ? "flex-end" : "flex-start",
       gap: 8,
       paddingBottom: 20,
     },
@@ -516,15 +481,12 @@ export default function SettingsScreen() {
       alignItems: "center",
       justifyContent: "center",
     },
-    dayChipText: {
-      fontSize: 15,
-      fontFamily: "Inter_600SemiBold",
-    },
+    dayChipText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
     inputGroup: { marginBottom: 16 },
     inputLabel: {
       fontSize: 13,
       fontFamily: "Inter_500Medium",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       marginBottom: 8,
     },
     inputWrapper: {
@@ -539,7 +501,7 @@ export default function SettingsScreen() {
       flex: 1,
       fontSize: 20,
       fontFamily: "Inter_700Bold",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       padding: 0,
     },
     currencyLabel: {
@@ -550,15 +512,10 @@ export default function SettingsScreen() {
     autoNote: {
       fontSize: 11,
       fontFamily: "Inter_400Regular",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       marginTop: 4,
     },
-    modalActions: {
-      flexDirection: "row",
-      gap: 10,
-      marginTop: 8,
-      marginBottom: 8,
-    },
+    modalActions: { flexDirection: "row", gap: 10, marginTop: 8, marginBottom: 8 },
     cancelBtn: {
       flex: 1,
       paddingVertical: 14,
@@ -566,21 +523,32 @@ export default function SettingsScreen() {
       borderWidth: 1.5,
       alignItems: "center",
     },
-    cancelBtnText: {
-      fontSize: 15,
-      fontFamily: "Inter_600SemiBold",
-    },
-    saveBtn: {
-      flex: 2,
+    cancelBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+    saveBtn: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
+    saveBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+    // Language picker
+    langOption: {
+      flexDirection: dir.flexRow,
+      alignItems: "center",
+      paddingHorizontal: 16,
       paddingVertical: 14,
       borderRadius: 12,
-      alignItems: "center",
+      marginBottom: 8,
+      borderWidth: 2,
     },
-    saveBtnText: {
-      fontSize: 15,
+    langOptionText: {
+      flex: 1,
+      fontSize: 16,
       fontFamily: "Inter_600SemiBold",
+      textAlign: dir.textAlign,
+    },
+    langOptionSub: {
+      fontSize: 12,
+      fontFamily: "Inter_400Regular",
     },
   });
+
+  const chevron = dir.isRTL ? "chevron-left" : "chevron-right";
 
   return (
     <View style={s.container}>
@@ -601,13 +569,17 @@ export default function SettingsScreen() {
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={s.row} activeOpacity={0.6} onPress={openBudgetModal}>
             <View style={s.rowRight}>
-              <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {dailyBudget > 0 ? `${formatAmount(dailyBudget)} ${t("app.currency")}` : t("app.undefined")}
+                {dailyBudget > 0
+                  ? `${formatNumber(dailyBudget, dir.locale)} ${t("app.currency")}`
+                  : t("app.undefined")}
               </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.daily_limit")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.daily_limit")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="calendar" size={16} color={colors.primary} />
               </View>
@@ -620,13 +592,17 @@ export default function SettingsScreen() {
             onPress={openBudgetModal}
           >
             <View style={s.rowRight}>
-              <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {monthlyBudget > 0 ? `${formatAmount(monthlyBudget)} ${t("app.currency")}` : t("app.undefined")}
+                {monthlyBudget > 0
+                  ? `${formatNumber(monthlyBudget, dir.locale)} ${t("app.currency")}`
+                  : t("app.undefined")}
               </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.monthly_limit")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.monthly_limit")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="pie-chart" size={16} color={colors.primary} />
               </View>
@@ -639,13 +615,15 @@ export default function SettingsScreen() {
             onPress={() => setPickerVisible(true)}
           >
             <View style={s.rowRight}>
-              <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
                 {cycleStartDay}
               </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.cycle_start_day")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.cycle_start_day")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="rotate-cw" size={16} color={colors.primary} />
               </View>
@@ -661,31 +639,40 @@ export default function SettingsScreen() {
           <TouchableOpacity style={s.row} activeOpacity={1} disabled>
             <View style={s.rowRight}>
               <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>{t("app.soon")}</Text>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>
+                  {t("app.soon")}
+                </Text>
               </View>
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>{t("app.currency_dzd")}</Text>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {t("app.currency_dzd")}
+              </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.currency")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.currency")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="dollar-sign" size={16} color={colors.primary} />
               </View>
             </View>
           </TouchableOpacity>
 
+          {/* Language row — now active */}
           <TouchableOpacity
             style={[s.row, s.rowBorder, { borderTopColor: colors.border }]}
-            activeOpacity={1}
-            disabled
+            activeOpacity={0.6}
+            onPress={() => setLangPickerVisible(true)}
           >
             <View style={s.rowRight}>
-              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>{t("app.soon")}</Text>
-              </View>
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>{t("settings.arabic")}</Text>
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {currentLangName}
+              </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.language")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.language")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="globe" size={16} color={colors.primary} />
               </View>
@@ -694,7 +681,9 @@ export default function SettingsScreen() {
         </View>
 
         {/* الأمان */}
-        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>{t("settings.security")}</Text>
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
+          {t("settings.security")}
+        </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={s.row}>
             <Switch
@@ -704,7 +693,9 @@ export default function SettingsScreen() {
               thumbColor={colors.primaryForeground}
             />
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.app_lock")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.app_lock")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="lock" size={16} color={colors.primary} />
               </View>
@@ -713,17 +704,25 @@ export default function SettingsScreen() {
         </View>
 
         {/* الإشعارات */}
-        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>{t("settings.notifications")}</Text>
+        <Text style={[s.sectionTitle, { color: colors.mutedForeground }]}>
+          {t("settings.notifications")}
+        </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={s.row} activeOpacity={1} disabled>
             <View style={s.rowRight}>
               <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>{t("app.soon")}</Text>
+                <Text style={[s.soonText, { color: colors.mutedForeground }]}>
+                  {t("app.soon")}
+                </Text>
               </View>
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>21:00</Text>
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                21:00
+              </Text>
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.daily_reminder")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.daily_reminder")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="bell" size={16} color={colors.primary} />
               </View>
@@ -746,11 +745,13 @@ export default function SettingsScreen() {
               {localLoading ? (
                 <ActivityIndicator size="small" color={colors.primary} />
               ) : (
-                <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+                <Feather name={chevron} size={16} color={colors.mutedForeground} />
               )}
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.export_backup")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.export_backup")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="upload" size={16} color={colors.primary} />
               </View>
@@ -767,11 +768,13 @@ export default function SettingsScreen() {
               {localLoading ? (
                 <ActivityIndicator size="small" color={colors.primary} />
               ) : (
-                <Feather name="chevron-left" size={16} color={colors.mutedForeground} />
+                <Feather name={chevron} size={16} color={colors.mutedForeground} />
               )}
             </View>
             <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>{t("settings.restore_file")}</Text>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.restore_file")}
+              </Text>
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="download" size={16} color={colors.primary} />
               </View>
@@ -788,39 +791,72 @@ export default function SettingsScreen() {
             <View>
               <View style={s.userCard}>
                 {cloudUser.photoURL != null ? (
-                  <Image source={{ uri: cloudUser.photoURL }} style={s.userAvatar} />
+                  <Image
+                    source={{ uri: cloudUser.photoURL }}
+                    style={s.userAvatar}
+                  />
                 ) : (
-                  <View style={[s.userAvatarPlaceholder, { backgroundColor: colors.secondary }]}>
+                  <View
+                    style={[
+                      s.userAvatarPlaceholder,
+                      { backgroundColor: colors.secondary },
+                    ]}
+                  >
                     <Feather name="user" size={20} color={colors.primary} />
                   </View>
                 )}
                 <View style={s.userInfo}>
-                  <Text style={[s.userName, { color: colors.foreground }]} numberOfLines={1}>
+                  <Text
+                    style={[s.userName, { color: colors.foreground }]}
+                    numberOfLines={1}
+                  >
                     {cloudUser.displayName ?? t("settings.google_user")}
                   </Text>
-                  <Text style={[s.userEmail, { color: colors.mutedForeground }]} numberOfLines={1}>
+                  <Text
+                    style={[s.userEmail, { color: colors.mutedForeground }]}
+                    numberOfLines={1}
+                  >
                     {cloudUser.email}
                   </Text>
-                  <Text style={[s.userBackupDate, { color: colors.mutedForeground }]}>
+                  <Text
+                    style={[s.userBackupDate, { color: colors.mutedForeground }]}
+                  >
                     {lastBackupDate != null
-                      ? `${t("settings.last_backup")}: ${formatDateTimeAr(lastBackupDate)}`
+                      ? `${t("settings.last_backup")}: ${formatDateTimeLocale(
+                          lastBackupDate,
+                          dir.locale
+                        )}`
                       : t("settings.no_backup_yet")}
                   </Text>
                 </View>
               </View>
 
-              <View style={[s.cloudActionsRow, { borderTopColor: colors.border }]}>
+              <View
+                style={[
+                  s.cloudActionsRow,
+                  { borderTopColor: colors.border },
+                ]}
+              >
                 <TouchableOpacity
                   style={[s.cloudBtn, { backgroundColor: colors.primary }]}
                   onPress={handleCloudUpload}
                   disabled={cloudLoading}
                 >
                   {cloudLoading ? (
-                    <ActivityIndicator size="small" color={colors.primaryForeground} />
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.primaryForeground}
+                    />
                   ) : (
-                    <Feather name="upload-cloud" size={15} color={colors.primaryForeground} />
+                    <Feather
+                      name="upload-cloud"
+                      size={15}
+                      color={colors.primaryForeground}
+                    />
                   )}
-                  <Text style={[s.cloudBtnText, { color: colors.primaryForeground }]}>
+                  <Text
+                    style={[s.cloudBtnText, { color: colors.primaryForeground }]}
+                  >
                     {t("settings.upload_cloud")}
                   </Text>
                 </TouchableOpacity>
@@ -838,9 +874,16 @@ export default function SettingsScreen() {
                   disabled={cloudLoading}
                 >
                   {cloudLoading ? (
-                    <ActivityIndicator size="small" color={colors.foreground} />
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.foreground}
+                    />
                   ) : (
-                    <Feather name="download-cloud" size={15} color={colors.foreground} />
+                    <Feather
+                      name="download-cloud"
+                      size={15}
+                      color={colors.foreground}
+                    />
                   )}
                   <Text style={[s.cloudBtnText, { color: colors.foreground }]}>
                     {t("settings.restore")}
@@ -873,15 +916,21 @@ export default function SettingsScreen() {
                 <Feather name="cloud" size={18} color={colors.primary} />
               )}
               <Text style={[s.signInBtnText, { color: colors.foreground }]}>
-                {cloudLoading ? t("settings.logging_in") : t("settings.google_login")}
+                {cloudLoading
+                  ? t("settings.logging_in")
+                  : t("settings.google_login")}
               </Text>
             </TouchableOpacity>
           )}
         </View>
 
         <View style={s.footer}>
-          <Text style={[s.footerText, { color: colors.mutedForeground }]}>{t("app.name")}</Text>
-          <Text style={[s.footerVersion, { color: colors.mutedForeground }]}>{t("app.version")}</Text>
+          <Text style={[s.footerText, { color: colors.mutedForeground }]}>
+            {t("app.name")}
+          </Text>
+          <Text style={[s.footerVersion, { color: colors.mutedForeground }]}>
+            {t("app.version")}
+          </Text>
         </View>
       </ScrollView>
 
@@ -907,13 +956,17 @@ export default function SettingsScreen() {
             ]}
           >
             <View style={s.modalHandle} />
-            <Text style={[s.modalTitle, { color: colors.foreground }]}>{t("settings.spending_limit")}</Text>
+            <Text style={[s.modalTitle, { color: colors.foreground }]}>
+              {t("settings.spending_limit")}
+            </Text>
             <Text style={[s.modalNote, { color: colors.mutedForeground }]}>
               {t("settings.monthly_auto_note")}
             </Text>
 
             <View style={s.inputGroup}>
-              <Text style={[s.inputLabel, { color: colors.foreground }]}>{t("settings.daily_limit_label")}</Text>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>
+                {t("settings.daily_limit_label")}
+              </Text>
               <View
                 style={[
                   s.inputWrapper,
@@ -927,15 +980,19 @@ export default function SettingsScreen() {
                   keyboardType="numeric"
                   placeholder={t("settings.enter_amount")}
                   placeholderTextColor={colors.mutedForeground}
-                  textAlign="right"
+                  textAlign={dir.textAlign}
                   autoFocus
                 />
-                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>{t("app.currency")}</Text>
+                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>
+                  {t("app.currency")}
+                </Text>
               </View>
             </View>
 
             <View style={s.inputGroup}>
-              <Text style={[s.inputLabel, { color: colors.foreground }]}>{t("settings.monthly_limit_label")}</Text>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>
+                {t("settings.monthly_limit_label")}
+              </Text>
               <View
                 style={[
                   s.inputWrapper,
@@ -952,9 +1009,11 @@ export default function SettingsScreen() {
                   keyboardType="numeric"
                   placeholder={t("app.auto_calculated")}
                   placeholderTextColor={colors.mutedForeground}
-                  textAlign="right"
+                  textAlign={dir.textAlign}
                 />
-                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>{t("app.currency")}</Text>
+                <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>
+                  {t("app.currency")}
+                </Text>
               </View>
               {!monthlyEditedManually && dailyInput.length > 0 && (
                 <Text style={[s.autoNote, { color: colors.mutedForeground }]}>
@@ -968,13 +1027,17 @@ export default function SettingsScreen() {
                 style={[s.cancelBtn, { borderColor: colors.border }]}
                 onPress={() => setBudgetModalVisible(false)}
               >
-                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>{t("app.cancel")}</Text>
+                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>
+                  {t("app.cancel")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.saveBtn, { backgroundColor: colors.primary }]}
                 onPress={saveBudget}
               >
-                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>{t("app.save")}</Text>
+                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>
+                  {t("app.save")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -989,7 +1052,10 @@ export default function SettingsScreen() {
         onRequestClose={() => setPickerVisible(false)}
       >
         <View style={s.modalOverlay}>
-          <Pressable style={s.modalBackdrop} onPress={() => setPickerVisible(false)} />
+          <Pressable
+            style={s.modalBackdrop}
+            onPress={() => setPickerVisible(false)}
+          />
           <View
             style={[
               s.modalSheet,
@@ -1013,8 +1079,12 @@ export default function SettingsScreen() {
                       style={[
                         s.dayChip,
                         {
-                          borderColor: selected ? colors.primary : colors.border,
-                          backgroundColor: selected ? colors.primary : colors.secondary,
+                          borderColor: selected
+                            ? colors.primary
+                            : colors.border,
+                          backgroundColor: selected
+                            ? colors.primary
+                            : colors.secondary,
                         },
                       ]}
                       onPress={() => chooseDay(day)}
@@ -1022,7 +1092,11 @@ export default function SettingsScreen() {
                       <Text
                         style={[
                           s.dayChipText,
-                          { color: selected ? colors.primaryForeground : colors.foreground },
+                          {
+                            color: selected
+                              ? colors.primaryForeground
+                              : colors.foreground,
+                          },
                         ]}
                       >
                         {day}
@@ -1032,6 +1106,76 @@ export default function SettingsScreen() {
                 })}
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal: اختيار اللغة */}
+      <Modal
+        visible={langPickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setLangPickerVisible(false)}
+      >
+        <View style={s.modalOverlay}>
+          <Pressable
+            style={s.modalBackdrop}
+            onPress={() => setLangPickerVisible(false)}
+          />
+          <View
+            style={[
+              s.modalSheet,
+              { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 },
+            ]}
+          >
+            <View style={s.modalHandle} />
+            <Text style={[s.modalTitle, { color: colors.foreground }]}>
+              {t("settings.language_select")}
+            </Text>
+
+            <View style={{ marginTop: 8 }}>
+              {LANGUAGE_OPTIONS.map((opt) => {
+                const isSelected = opt.code === language;
+                return (
+                  <TouchableOpacity
+                    key={opt.code}
+                    style={[
+                      s.langOption,
+                      {
+                        borderColor: isSelected ? colors.primary : colors.border,
+                        backgroundColor: isSelected
+                          ? colors.primary + "18"
+                          : colors.secondary,
+                      },
+                    ]}
+                    onPress={async () => {
+                      setLangPickerVisible(false);
+                      await changeLanguage(opt.code);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        s.langOptionText,
+                        {
+                          color: isSelected
+                            ? colors.primary
+                            : colors.foreground,
+                        },
+                      ]}
+                    >
+                      {opt.nativeName}
+                    </Text>
+                    {isSelected && (
+                      <Feather
+                        name="check"
+                        size={18}
+                        color={colors.primary}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
         </View>
       </Modal>
