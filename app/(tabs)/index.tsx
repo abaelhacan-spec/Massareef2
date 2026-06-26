@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import { useLanguage } from "@/lib/useLanguage";
+import { useDirection } from "@/hooks/useDirection";
 import {
   type Cycle,
   type DayExpense,
@@ -34,11 +35,13 @@ import {
   TOTAL_BUDGET,
   computeBudgetStats,
   formatDate,
-  formatDateAr,
-  getCycleName,
+  getDayName,
+  formatShortDate,
+  formatCycleDisplayName,
+  formatNumber,
   getCycleEndDate,
   getCycleStartDate,
-  getDayNameAr,
+  getCycleName,
 } from "@/lib/budget";
 import { CalcModal } from "@/components/CalcModal";
 
@@ -104,10 +107,12 @@ function ReminderBanner({
       <View style={bannerStyles.iconWrap}>
         <Text style={bannerStyles.emoji}>💰</Text>
       </View>
-      <Text style={bannerStyles.text}>
-        {t("home.banner_reminder")}
-      </Text>
-      <TouchableOpacity onPress={onDismiss} style={bannerStyles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+      <Text style={bannerStyles.text}>{t("home.banner_reminder")}</Text>
+      <TouchableOpacity
+        onPress={onDismiss}
+        style={bannerStyles.closeBtn}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
         <Feather name="x" size={16} color="#ffffff" />
       </TouchableOpacity>
     </Animated.View>
@@ -146,18 +151,16 @@ const bannerStyles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 13,
     fontFamily: "Inter_500Medium",
-    textAlign: "right",
     lineHeight: 18,
   },
-  closeBtn: {
-    padding: 4,
-  },
+  closeBtn: { padding: 4 },
 });
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const colors = useColors();
   const { t } = useLanguage();
+  const dir = useDirection();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -172,11 +175,13 @@ export default function HomeScreen() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [dailyBudget, setDailyBudgetState] = useState<number>(0);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
-const [calcVisible, setCalcVisible] = useState(false);
-// ── Auto-scroll to today ──────────────────────────────────────────────────
-const scrollViewRef = useRef<ScrollView>(null);
-const todayYOffset = useRef<number | null>(null);
-const hasScrolledToToday = useRef(false);  
+  const [calcVisible, setCalcVisible] = useState(false);
+
+  // Auto-scroll to today
+  const scrollViewRef = useRef<ScrollView>(null);
+  const todayYOffset = useRef<number | null>(null);
+  const hasScrolledToToday = useRef(false);
+
   const today = new Date();
   const todayStr = formatDate(today);
 
@@ -198,14 +203,12 @@ const hasScrolledToToday = useRef(false);
       const dayExpenses = await getExpensesForCycle(currentCycle.id);
       setExpenses(dayExpenses);
       setLoading(false);
-      // Check if reminder banner should show
       checkBannerVisibility(dayExpenses);
     } else {
       setLoading(false);
     }
   }, [todayStr]);
 
-  // Show banner if after 21:00 and today's expense is 0 / not entered
   function checkBannerVisibility(dayExpenses: DayExpense[]) {
     if (bannerDismissed) return;
     const hour = new Date().getHours();
@@ -219,29 +222,29 @@ const hasScrolledToToday = useRef(false);
     loadData();
   }, [loadData]);
 
-  // Re-check banner every minute (handles the 21:00 threshold crossing)
   useEffect(() => {
     const interval = setInterval(() => {
       if (!bannerDismissed) checkBannerVisibility(expenses);
     }, 60_000);
     return () => clearInterval(interval);
   }, [expenses, bannerDismissed, todayStr]);
-// Scroll to today once after data loads
-useEffect(() => {
-  if (!loading && expenses.length > 0 && !hasScrolledToToday.current) {
-    const timer = setTimeout(() => {
-      if (todayYOffset.current !== null && scrollViewRef.current) {
-        scrollViewRef.current.scrollTo({
-          y: Math.max(0, todayYOffset.current - 100),
-          animated: true,
-        });
-        hasScrolledToToday.current = true;
-      }
-    }, 350);
 
-    return () => clearTimeout(timer);
-  }
-}, [loading, expenses]);
+  // Scroll to today once after data loads
+  useEffect(() => {
+    if (!loading && expenses.length > 0 && !hasScrolledToToday.current) {
+      const timer = setTimeout(() => {
+        if (todayYOffset.current !== null && scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({
+            y: Math.max(0, todayYOffset.current - 100),
+            animated: true,
+          });
+          hasScrolledToToday.current = true;
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, expenses]);
+
   const stats =
     cycle && expenses.length > 0
       ? computeBudgetStats(
@@ -257,13 +260,17 @@ useEffect(() => {
   const isGood = stats ? !stats.isOverBudget : true;
   const statusColor = isGood ? colors.success : colors.destructive;
   const statusBg = isGood
-    ? isDark ? colors.successLight : "#DCFCE7"
-    : isDark ? colors.dangerLight : "#FEE2E2";
+    ? isDark
+      ? colors.successLight
+      : "#DCFCE7"
+    : isDark
+    ? colors.dangerLight
+    : "#FEE2E2";
 
   function openDayModal(day: DayExpense) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedDay(day);
-  setInputAmount(day.is_entered && day.amount > 0 ? String(day.amount) : "");  
+    setInputAmount(day.is_entered && day.amount > 0 ? String(day.amount) : "");
     setModalVisible(true);
   }
 
@@ -273,12 +280,9 @@ useEffect(() => {
     await upsertDayAmount(cycle.id, selectedDay.date, amount);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setModalVisible(false);
-
-    // If the saved day is today and amount > 0, hide the banner
     if (selectedDay.date === todayStr && amount > 0) {
       setBannerVisible(false);
     }
-
     loadData();
   }
 
@@ -287,14 +291,7 @@ useEffect(() => {
     setBannerVisible(false);
   }
 
-  function formatAmount(n: number): string {
-    return Math.round(n).toLocaleString("ar-DZ");
-  }
-
   const isToday = (dateStr: string) => dateStr === todayStr;
-
-  // Banner top offset accounts for the status bar / safe area
-  const bannerTop = Platform.OS === "web" ? 0 : insets.top;
 
   const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
@@ -304,21 +301,21 @@ useEffect(() => {
       backgroundColor: colors.card,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      alignItems: "flex-end",
+      alignItems: dir.alignSelf,
       paddingTop: Platform.OS === "web" ? 67 : insets.top + 12,
     },
     headerTitle: {
       fontSize: 24,
       fontFamily: "Inter_700Bold",
       color: colors.foreground,
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
     headerSubtitle: {
       fontSize: 13,
       fontFamily: "Inter_400Regular",
       color: colors.mutedForeground,
       marginTop: 2,
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
     scroll: { flex: 1 },
     content: {
@@ -334,7 +331,7 @@ useEffect(() => {
     statusBadge: {
       flexDirection: "row",
       alignItems: "center",
-      alignSelf: "flex-end",
+      alignSelf: dir.alignSelf,
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 20,
@@ -352,19 +349,34 @@ useEffect(() => {
       borderRadius: 10,
       padding: 12,
       marginBottom: 8,
-      alignItems: "flex-end",
+      alignItems: dir.alignSelf,
     },
     statLabel: {
       fontSize: 11,
       fontFamily: "Inter_400Regular",
       marginBottom: 4,
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
-    statValue: { fontSize: 15, fontFamily: "Inter_700Bold", textAlign: "right" },
+    statValue: {
+      fontSize: 15,
+      fontFamily: "Inter_700Bold",
+      textAlign: dir.textAlign,
+    },
     progressSection: { marginTop: 8 },
-    progressRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
-    progressLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
-    progressLabelSm: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 2 },
+    progressRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 4,
+    },
+    progressLabel: {
+      fontSize: 12,
+      fontFamily: "Inter_500Medium",
+    },
+    progressLabelSm: {
+      fontSize: 10,
+      fontFamily: "Inter_400Regular",
+      marginTop: 2,
+    },
     progressBar: { height: 8, borderRadius: 4, overflow: "hidden" },
     progressFill: { height: "100%", borderRadius: 4 },
     sectionHeader: {
@@ -373,7 +385,11 @@ useEffect(() => {
       alignItems: "center",
       marginBottom: 10,
     },
-    sectionTitle: { fontSize: 16, fontFamily: "Inter_600SemiBold", textAlign: "right" },
+    sectionTitle: {
+      fontSize: 16,
+      fontFamily: "Inter_600SemiBold",
+      textAlign: dir.textAlign,
+    },
     sectionSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
     dayRow: {
       flexDirection: "row",
@@ -385,11 +401,25 @@ useEffect(() => {
       borderWidth: 1,
       marginBottom: 6,
     },
-    dayLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+    dayLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      flex: 1,
+    },
     dayDot: { width: 8, height: 8, borderRadius: 4 },
-    dayName: { fontSize: 14, fontFamily: "Inter_500Medium", textAlign: "right" },
+    dayName: {
+      fontSize: 14,
+      fontFamily: "Inter_500Medium",
+      textAlign: dir.textAlign,
+    },
     todayBadge: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-    dayDate: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1, textAlign: "right" },
+    dayDate: {
+      fontSize: 12,
+      fontFamily: "Inter_400Regular",
+      marginTop: 1,
+      textAlign: dir.textAlign,
+    },
     dayRight: { flexDirection: "row", alignItems: "center" },
     dayAmount: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
     loadingText: {
@@ -415,11 +445,15 @@ useEffect(() => {
       alignSelf: "center",
       marginBottom: 20,
     },
-    modalTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "right" },
+    modalTitle: {
+      fontSize: 20,
+      fontFamily: "Inter_700Bold",
+      textAlign: dir.textAlign,
+    },
     modalDate: {
       fontSize: 14,
       fontFamily: "Inter_400Regular",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       marginTop: 2,
       marginBottom: 20,
     },
@@ -436,17 +470,26 @@ useEffect(() => {
       flex: 1,
       fontSize: 28,
       fontFamily: "Inter_700Bold",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       padding: 0,
     },
-    currencyLabel: { fontSize: 18, fontFamily: "Inter_500Medium", marginLeft: 8 },
+    currencyLabel: {
+      fontSize: 18,
+      fontFamily: "Inter_500Medium",
+      marginLeft: 8,
+    },
     quickAmounts: {
       flexDirection: "row",
       gap: 8,
       marginBottom: 20,
-      justifyContent: "flex-end",
+      justifyContent: dir.isRTL ? "flex-end" : "flex-start",
     },
-    quickBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+    quickBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+    },
     quickBtnText: { fontSize: 13, fontFamily: "Inter_500Medium" },
     modalActions: { flexDirection: "row", gap: 10 },
     cancelBtn: {
@@ -457,7 +500,12 @@ useEffect(() => {
       alignItems: "center",
     },
     cancelBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
-    saveBtn: { flex: 2, paddingVertical: 14, borderRadius: colors.radius, alignItems: "center" },
+    saveBtn: {
+      flex: 2,
+      paddingVertical: 14,
+      borderRadius: colors.radius,
+      alignItems: "center",
+    },
     saveBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
   });
 
@@ -468,19 +516,27 @@ useEffect(() => {
         <Text style={s.headerTitle}>{t("app.name")}</Text>
         {cycle && (
           <Text style={s.headerSubtitle}>
-            {cycle.name} • {formatDateAr(cycle.start_date)} – {formatDateAr(cycle.end_date)}
+            {formatCycleDisplayName(
+              new Date(cycle.start_date + "T00:00:00"),
+              dir.locale
+            )}{" "}
+            •{" "}
+            {formatShortDate(cycle.start_date, dir.locale)} –{" "}
+            {formatShortDate(cycle.end_date, dir.locale)}
           </Text>
         )}
       </View>
 
       <ScrollView
-  ref={scrollViewRef} 
+        ref={scrollViewRef}
         style={s.scroll}
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
         {loading && (
-          <Text style={[s.loadingText, { color: colors.mutedForeground }]}>{t("app.loading")}</Text>
+          <Text style={[s.loadingText, { color: colors.mutedForeground }]}>
+            {t("app.loading")}
+          </Text>
         )}
 
         {/* ── Summary Card ── */}
@@ -499,27 +555,46 @@ useEffect(() => {
 
             <View style={s.statsGrid}>
               <View style={[s.statBox, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("home.total_spent")}</Text>
+                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>
+                  {t("home.total_spent")}
+                </Text>
                 <Text style={[s.statValue, { color: colors.foreground }]}>
-                  {formatAmount(stats.totalSpent)} دج
+                  {formatNumber(stats.totalSpent, dir.locale)} {t("app.currency")}
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("home.allowed_so_far")}</Text>
+                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>
+                  {t("home.allowed_so_far")}
+                </Text>
                 <Text style={[s.statValue, { color: colors.mutedForeground }]}>
-                  {formatAmount(stats.allowedSoFar)} دج
+                  {formatNumber(stats.allowedSoFar, dir.locale)} {t("app.currency")}
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: statusBg }]}>
-                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("home.difference")}</Text>
+                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>
+                  {t("home.difference")}
+                </Text>
                 <Text style={[s.statValue, { color: statusColor }]}>
-                  {stats.difference >= 0 ? "+" : ""}{formatAmount(stats.difference)} دج
+                  {stats.difference >= 0 ? "+" : ""}
+                  {formatNumber(stats.difference, dir.locale)} {t("app.currency")}
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("home.remaining")}</Text>
-                <Text style={[s.statValue, { color: stats.remaining >= 0 ? colors.success : colors.destructive }]}>
-                  {formatAmount(stats.remaining)} دج
+                <Text style={[s.statLabel, { color: colors.mutedForeground }]}>
+                  {t("home.remaining")}
+                </Text>
+                <Text
+                  style={[
+                    s.statValue,
+                    {
+                      color:
+                        stats.remaining >= 0
+                          ? colors.success
+                          : colors.destructive,
+                    },
+                  ]}
+                >
+                  {formatNumber(stats.remaining, dir.locale)} {t("app.currency")}
                 </Text>
               </View>
             </View>
@@ -527,17 +602,23 @@ useEffect(() => {
             <View style={s.progressSection}>
               <View style={s.progressRow}>
                 <Text style={[s.progressLabelSm, { color: colors.mutedForeground }]}>
-                 {monthlyBudget > 0 ? `${formatAmount(monthlyBudget)} ${t("app.currency")}` : t("app.undefined")} 
+                  {monthlyBudget > 0
+                    ? `${formatNumber(monthlyBudget, dir.locale)} ${t("app.currency")}`
+                    : t("app.undefined")}
                 </Text>
                 <Text style={[s.progressLabel, { color: colors.mutedForeground }]}>
-                  {stats.daysElapsed} / {stats.totalDays} {t("home.day")} • {Math.round(stats.percentUsed)}%
+                  {stats.daysElapsed} / {stats.totalDays} {t("home.day")} •{" "}
+                  {Math.round(stats.percentUsed)}%
                 </Text>
               </View>
               <View style={[s.progressBar, { backgroundColor: colors.border }]}>
                 <View
                   style={[
                     s.progressFill,
-                    { width: `${stats.percentUsed}%` as any, backgroundColor: statusColor },
+                    {
+                      width: `${stats.percentUsed}%` as any,
+                      backgroundColor: statusColor,
+                    },
                   ]}
                 />
               </View>
@@ -549,35 +630,43 @@ useEffect(() => {
         {expenses.length > 0 && (
           <View style={s.sectionHeader}>
             <Text style={[s.sectionSub, { color: colors.mutedForeground }]}>
-             {dailyBudget > 0 ? `${formatAmount(dailyBudget)} ${t("app.currency")} / ${t("home.day")}` : t("home.no_limit_set")} 
+              {dailyBudget > 0
+                ? `${formatNumber(dailyBudget, dir.locale)} ${t("app.currency")} / ${t("home.day")}`
+                : t("home.no_limit_set")}
             </Text>
-            <Text style={[s.sectionTitle, { color: colors.foreground }]}>{t("home.period_days")}</Text>
+            <Text style={[s.sectionTitle, { color: colors.foreground }]}>
+              {t("home.period_days")}
+            </Text>
           </View>
         )}
 
         {expenses.map((day) => {
           const todayFlag = isToday(day.date);
-          const overDay = !!day.is_entered && dailyBudget > 0 && day.amount > dailyBudget;
-          const amtColor =
-    !day.is_entered
-      ? colors.mutedForeground
-      : overDay
-      ? colors.destructive
-      : day.amount === 0
-      ? colors.foreground
-      : colors.success;
-          const rowBg = todayFlag ? (isDark ? "#1A2D44" : "#EFF6FF") : colors.card;
+          const overDay =
+            !!day.is_entered && dailyBudget > 0 && day.amount > dailyBudget;
+          const amtColor = !day.is_entered
+            ? colors.mutedForeground
+            : overDay
+            ? colors.destructive
+            : day.amount === 0
+            ? colors.foreground
+            : colors.success;
+          const rowBg = todayFlag
+            ? isDark
+              ? "#1A2D44"
+              : "#EFF6FF"
+            : colors.card;
 
           return (
             <TouchableOpacity
               key={day.date}
-             onLayout={
-  todayFlag
-    ? (e) => {
-        todayYOffset.current = e.nativeEvent.layout.y;
-      }
-    : undefined
-} 
+              onLayout={
+                todayFlag
+                  ? (e) => {
+                      todayYOffset.current = e.nativeEvent.layout.y;
+                    }
+                  : undefined
+              }
               style={[
                 s.dayRow,
                 {
@@ -589,25 +678,61 @@ useEffect(() => {
               onPress={() => openDayModal(day)}
               activeOpacity={0.7}
             >
-              <View style={[s.dayLeft, { justifyContent: "flex-end" }]}>
-                <View style={{ alignItems: "flex-end" }}>
+              {/* في RTL: النص على اليمين والدوت على اليسار */}
+              <View style={[s.dayLeft, { justifyContent: dir.isRTL ? "flex-end" : "flex-start" }]}>
+                {dir.isRTL && (
+                  <View
+                    style={[
+                      s.dayDot,
+                      {
+                        backgroundColor:
+                          day.is_entered && day.amount > 0
+                            ? amtColor
+                            : colors.border,
+                      },
+                    ]}
+                  />
+                )}
+                <View style={{ alignItems: dir.alignSelf }}>
                   <Text style={[s.dayName, { color: colors.foreground }]}>
-                    {getDayNameAr(day.date)}
+                    {getDayName(day.date, dir.locale)}
                     {todayFlag ? (
-                      <Text style={[s.todayBadge, { color: colors.primary }]}> • {t("app.today")}</Text>
+                      <Text style={[s.todayBadge, { color: colors.primary }]}>
+                        {" "}
+                        • {t("app.today")}
+                      </Text>
                     ) : null}
                   </Text>
                   <Text style={[s.dayDate, { color: colors.mutedForeground }]}>
-                    {formatDateAr(day.date)}
+                    {formatShortDate(day.date, dir.locale)}
                   </Text>
                 </View>
-                <View style={[s.dayDot, {backgroundColor: day.is_entered && day.amount > 0 ? amtColor : colors.border }]} />
+                {!dir.isRTL && (
+                  <View
+                    style={[
+                      s.dayDot,
+                      {
+                        backgroundColor:
+                          day.is_entered && day.amount > 0
+                            ? amtColor
+                            : colors.border,
+                      },
+                    ]}
+                  />
+                )}
               </View>
               <View style={s.dayRight}>
-                <Feather name="edit-2" size={13} color={colors.mutedForeground} style={{ marginRight: 6 }} />
+                <Feather
+                  name="edit-2"
+                  size={13}
+                  color={colors.mutedForeground}
+                  style={{ marginRight: 6 }}
+                />
                 <Text style={[s.dayAmount, { color: amtColor }]}>
-                 {day.is_entered ? `${formatAmount(day.amount)} ${t("app.currency")}` : t("home.empty_amount")}
-             </Text>
+                  {day.is_entered
+                    ? `${formatNumber(day.amount, dir.locale)} ${t("app.currency")}`
+                    : t("home.empty_amount")}
+                </Text>
               </View>
             </TouchableOpacity>
           );
@@ -625,7 +750,10 @@ useEffect(() => {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={s.modalOverlay}
         >
-          <Pressable style={s.modalBackdrop} onPress={() => setModalVisible(false)} />
+          <Pressable
+            style={s.modalBackdrop}
+            onPress={() => setModalVisible(false)}
+          />
           <View
             style={[
               s.modalSheet,
@@ -634,51 +762,57 @@ useEffect(() => {
           >
             <View style={s.modalHandle} />
             <Text style={[s.modalTitle, { color: colors.foreground }]}>
-              {selectedDay ? getDayNameAr(selectedDay.date) : ""}
+              {selectedDay ? getDayName(selectedDay.date, dir.locale) : ""}
             </Text>
             <Text style={[s.modalDate, { color: colors.mutedForeground }]}>
-              {selectedDay ? formatDateAr(selectedDay.date) : ""}
+              {selectedDay ? formatShortDate(selectedDay.date, dir.locale) : ""}
             </Text>
 
             <View
-  style={[s.inputWrapper, { borderColor: colors.border, backgroundColor: colors.background }]}
->
-  <TextInput
-    style={[s.amountInput, { color: colors.foreground }]}
-    value={inputAmount}
-    onChangeText={setInputAmount}
-    keyboardType="numeric"
-    placeholder="0"
-    placeholderTextColor={colors.mutedForeground}
-    textAlign="right"
-    autoFocus
-    selectTextOnFocus
-  />
-
-  <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>{t("app.currency")}</Text>
-
-  <TouchableOpacity
-    onPress={() => setCalcVisible(true)}
-    style={{ marginLeft: 8 }}
-    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-  >
-    <Ionicons
-      name="calculator-outline"
-      size={22}
-      color={colors.primary}
-    />
-  </TouchableOpacity>
-</View>
+              style={[
+                s.inputWrapper,
+                { borderColor: colors.border, backgroundColor: colors.background },
+              ]}
+            >
+              <TextInput
+                style={[s.amountInput, { color: colors.foreground }]}
+                value={inputAmount}
+                onChangeText={setInputAmount}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor={colors.mutedForeground}
+                textAlign={dir.textAlign}
+                autoFocus
+                selectTextOnFocus
+              />
+              <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>
+                {t("app.currency")}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setCalcVisible(true)}
+                style={{ marginLeft: 8 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name="calculator-outline"
+                  size={22}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
 
             <View style={s.quickAmounts}>
-              {[500, 1000, 1500, 2000].map((amt) => (
+              {[500, 1000, 2000].map((amt) => (
                 <TouchableOpacity
                   key={amt}
-                  style={[s.quickBtn, { borderColor: colors.border, backgroundColor: colors.secondary }]}
+                  style={[
+                    s.quickBtn,
+                    { borderColor: colors.border, backgroundColor: colors.secondary },
+                  ]}
                   onPress={() => setInputAmount(String(amt))}
                 >
                   <Text style={[s.quickBtnText, { color: colors.foreground }]}>
-                    {formatAmount(amt)}
+                    {formatNumber(amt, dir.locale)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -689,28 +823,38 @@ useEffect(() => {
                 style={[s.cancelBtn, { borderColor: colors.border }]}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>{t("app.cancel")}</Text>
+                <Text style={[s.cancelBtnText, { color: colors.mutedForeground }]}>
+                  {t("app.cancel")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.saveBtn, { backgroundColor: colors.primary }]}
                 onPress={saveAmount}
               >
-                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>{t("app.save")}</Text>
+                <Text style={[s.saveBtnText, { color: colors.primaryForeground }]}>
+                  {t("app.save")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* CalcModal */}
       <CalcModal
         visible={calcVisible}
         onClose={() => setCalcVisible(false)}
         onInsert={(total) => setInputAmount(String(total))}
-       initialValue={
-          selectedDay?.is_entered && selectedDay.amount > 0
-            ? selectedDay.amount
-            : 0
-        } 
+        initialValue={
+          inputAmount.trim() !== "" ? parseFloat(inputAmount) || 0 : 0
+        }
+      />
+
+      {/* Reminder Banner */}
+      <ReminderBanner
+        visible={bannerVisible}
+        onDismiss={dismissBanner}
+        colors={colors}
       />
     </View>
   );
