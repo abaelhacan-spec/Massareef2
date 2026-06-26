@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Localization from "expo-localization";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { I18nManager } from "react-native";
@@ -14,7 +13,7 @@ const SUPPORTED_LANGUAGES = ["ar", "fr", "en"] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
-const fallbackLng: SupportedLanguage = "ar";
+const fallbackLng: SupportedLanguage = "en";
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -34,14 +33,15 @@ export async function initLanguage(): Promise<void> {
   try {
     const saved = await AsyncStorage.getItem(LANGUAGE_KEY);
 
-    const deviceLanguage =
-      Localization.getLocales()?.[0]?.languageCode ?? fallbackLng;
+    // أول تثبيت: لا يوجد saved → الإنجليزية افتراضياً
+    // تثبيت سابق: يستخدم اللغة المحفوظة
+    const candidate = saved ?? "en";
 
-    const candidate = (saved ?? deviceLanguage) as SupportedLanguage;
-
-    const resolved: SupportedLanguage = SUPPORTED_LANGUAGES.includes(candidate)
-      ? candidate
-      : fallbackLng;
+    const resolved: SupportedLanguage = SUPPORTED_LANGUAGES.includes(
+      candidate as SupportedLanguage
+    )
+      ? (candidate as SupportedLanguage)
+      : "en";
 
     // ✅ تطبيق اتجاه الواجهة قبل رسم أي عنصر
     // هذا ضروري حتى يعمل RTL بشكل صحيح بعد إعادة التشغيل
@@ -53,10 +53,10 @@ export async function initLanguage(): Promise<void> {
   } catch (error) {
     console.warn("Failed to initialize language:", error);
 
-    // في حالة الخطأ نرجع للعربية مع RTL
-    I18nManager.allowRTL(true);
-    I18nManager.forceRTL(true);
-    await i18n.changeLanguage(fallbackLng);
+    // في حالة الخطأ نرجع للإنجليزية مع LTR
+    I18nManager.allowRTL(false);
+    I18nManager.forceRTL(false);
+    await i18n.changeLanguage("en");
   }
 }
 
