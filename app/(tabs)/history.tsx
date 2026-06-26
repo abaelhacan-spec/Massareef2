@@ -15,18 +15,33 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import { useLanguage } from "@/lib/useLanguage";
-import { type Cycle, type DayExpense, getAllCycles, getExpensesForCycle, getMonthlyBudget } from "@/lib/database";
-import { DAILY_BUDGET, TOTAL_BUDGET, formatDateAr, getDayNameAr } from "@/lib/budget";
+import { useDirection } from "@/hooks/useDirection";
+import {
+  type Cycle,
+  type DayExpense,
+  getAllCycles,
+  getExpensesForCycle,
+  getMonthlyBudget,
+} from "@/lib/database";
+import {
+  TOTAL_BUDGET,
+  getDayName,
+  formatShortDate,
+  formatNumber,
+} from "@/lib/budget";
 
 export default function HistoryScreen() {
   const colors = useColors();
   const { t } = useLanguage();
+  const dir = useDirection();
   const insets = useSafeAreaInsets();
   const [cycles, setCycles] = useState<(Cycle & { total_spent: number })[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedCycle, setSelectedCycle] = useState<(Cycle & { total_spent: number }) | null>(null);
+  const [selectedCycle, setSelectedCycle] = useState<
+    (Cycle & { total_spent: number }) | null
+  >(null);
   const [selectedExpenses, setSelectedExpenses] = useState<DayExpense[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
@@ -63,11 +78,10 @@ export default function HistoryScreen() {
     setSelectedExpenses([]);
   }
 
-  function formatAmount(n: number): string {
-    return Math.round(n).toLocaleString("ar-DZ");
-  }
-
-  function getCycleSummary(expenses: DayExpense[], monthlyBudgetValue: number) {
+  function getCycleSummary(
+    expenses: DayExpense[],
+    monthlyBudgetValue: number
+  ) {
     const total = expenses.reduce((sum, d) => sum + d.amount, 0);
     const zeroDays = expenses.filter((d) => d.amount === 0).length;
     const totalDays = expenses.length;
@@ -84,14 +98,14 @@ export default function HistoryScreen() {
       backgroundColor: colors.card,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      alignItems: "flex-end",
+      alignItems: dir.alignSelf,
       paddingTop: Platform.OS === "web" ? 67 : insets.top + 12,
     },
     headerTitle: {
       fontSize: 24,
       fontFamily: "Inter_700Bold",
       color: colors.foreground,
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
     headerSubtitle: {
       fontSize: 13,
@@ -122,7 +136,7 @@ export default function HistoryScreen() {
     cycleName: {
       fontSize: 17,
       fontFamily: "Inter_700Bold",
-      textAlign: "right",
+      textAlign: dir.textAlign,
     },
     activeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
     activeBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
@@ -130,13 +144,13 @@ export default function HistoryScreen() {
     cycleDates: {
       fontSize: 12,
       fontFamily: "Inter_400Regular",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       marginBottom: 10,
     },
     progressBar: { height: 6, borderRadius: 3, overflow: "hidden", marginBottom: 10 },
     progressFill: { height: "100%", borderRadius: 3 },
     statsRow: { flexDirection: "row", justifyContent: "space-between" },
-    stat: { alignItems: "flex-end" },
+    stat: { alignItems: dir.alignSelf },
     statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
     statValue: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 2 },
     tapHint: {
@@ -168,11 +182,15 @@ export default function HistoryScreen() {
       marginBottom: 16,
     },
     modalHeader: { marginBottom: 12 },
-    modalTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "right" },
+    modalTitle: {
+      fontSize: 20,
+      fontFamily: "Inter_700Bold",
+      textAlign: dir.textAlign,
+    },
     modalSubtitle: {
       fontSize: 13,
       fontFamily: "Inter_400Regular",
-      textAlign: "right",
+      textAlign: dir.textAlign,
       marginTop: 2,
     },
     modalScroll: { maxHeight: 420 },
@@ -186,8 +204,17 @@ export default function HistoryScreen() {
       borderWidth: 1,
       marginBottom: 6,
     },
-    dayName: { fontSize: 14, fontFamily: "Inter_500Medium", textAlign: "right" },
-    dayDate: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1, textAlign: "right" },
+    dayName: {
+      fontSize: 14,
+      fontFamily: "Inter_500Medium",
+      textAlign: dir.textAlign,
+    },
+    dayDate: {
+      fontSize: 12,
+      fontFamily: "Inter_400Regular",
+      marginTop: 1,
+      textAlign: dir.textAlign,
+    },
     dayAmount: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
     closeBtn: {
       marginTop: 12,
@@ -202,7 +229,6 @@ export default function HistoryScreen() {
       fontSize: 14,
       fontFamily: "Inter_400Regular",
     },
-    // Summary box
     summaryBox: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -212,16 +238,31 @@ export default function HistoryScreen() {
       gap: 8,
     },
     summaryItem: { flex: 1, alignItems: "center", gap: 4 },
-    summaryLabel: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "center" },
-    summaryValue: { fontSize: 14, fontFamily: "Inter_700Bold", textAlign: "center" },
-    summarySub: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1, textAlign: "center" },
+    summaryLabel: {
+      fontSize: 11,
+      fontFamily: "Inter_400Regular",
+      textAlign: "center",
+    },
+    summaryValue: {
+      fontSize: 14,
+      fontFamily: "Inter_700Bold",
+      textAlign: "center",
+    },
+    summarySub: {
+      fontSize: 10,
+      fontFamily: "Inter_400Regular",
+      marginTop: 1,
+      textAlign: "center",
+    },
   });
 
   return (
     <View style={s.container}>
       <View style={s.header}>
         <Text style={s.headerTitle}>{t("history.title")}</Text>
-        <Text style={s.headerSubtitle}>{cycles.length} {t("history.cycle_count")}</Text>
+        <Text style={s.headerSubtitle}>
+          {cycles.length} {t("history.cycle_count")}
+        </Text>
       </View>
 
       <ScrollView
@@ -239,67 +280,109 @@ export default function HistoryScreen() {
         {cycles.length === 0 && !refreshing && (
           <View style={s.emptyState}>
             <Feather name="inbox" size={48} color={colors.border} />
-            <Text style={[s.emptyText, { color: colors.mutedForeground }]}>{t("history.no_cycles")}</Text>
+            <Text style={[s.emptyText, { color: colors.mutedForeground }]}>
+              {t("history.no_cycles")}
+            </Text>
           </View>
         )}
 
         {cycles.map((cycle, index) => {
-          const isOver = cycle.total_spent > TOTAL_BUDGET;
-          const pct = Math.min(100, (cycle.total_spent / TOTAL_BUDGET) * 100);
+          const budget = monthlyBudget > 0 ? monthlyBudget : TOTAL_BUDGET;
+          const isOver = cycle.total_spent > budget;
+          const pct = Math.min(100, (cycle.total_spent / budget) * 100);
           const statusColor = isOver ? colors.destructive : colors.success;
           const isActive = index === 0 && cycle.is_locked === 0;
 
           return (
             <TouchableOpacity
               key={cycle.id}
-              style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[
+                s.card,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
               onPress={() => openCycleDetail(cycle)}
               activeOpacity={0.7}
             >
               <View style={s.cardTop}>
-                <Text style={[s.cycleTotal, { color: isOver ? colors.destructive : colors.foreground }]}>
-                  {formatAmount(cycle.total_spent)} {t("app.currency")}
+                <Text
+                  style={[
+                    s.cycleTotal,
+                    {
+                      color: isOver ? colors.destructive : colors.foreground,
+                    },
+                  ]}
+                >
+                  {formatNumber(cycle.total_spent, dir.locale)} {t("app.currency")}
                 </Text>
                 <View style={s.nameRow}>
                   {isActive && (
-                    <View style={[s.activeBadge, { backgroundColor: colors.primary }]}>
-                      <Text style={[s.activeBadgeText, { color: colors.primaryForeground }]}>
+                    <View
+                      style={[s.activeBadge, { backgroundColor: colors.primary }]}
+                    >
+                      <Text
+                        style={[
+                          s.activeBadgeText,
+                          { color: colors.primaryForeground },
+                        ]}
+                      >
                         {t("history.active")}
                       </Text>
                     </View>
                   )}
                   {cycle.is_locked === 1 && (
-                    <Feather name="lock" size={12} color={colors.mutedForeground} />
+                    <Feather
+                      name="lock"
+                      size={12}
+                      color={colors.mutedForeground}
+                    />
                   )}
-                  <Text style={[s.cycleName, { color: colors.foreground }]}>{cycle.name}</Text>
+                  <Text style={[s.cycleName, { color: colors.foreground }]}>
+                    {cycle.name}
+                  </Text>
                 </View>
               </View>
 
               <Text style={[s.cycleDates, { color: colors.mutedForeground }]}>
-                {formatDateAr(cycle.start_date)} – {formatDateAr(cycle.end_date)}
+                {formatShortDate(cycle.start_date, dir.locale)} –{" "}
+                {formatShortDate(cycle.end_date, dir.locale)}
               </Text>
 
               <View style={[s.progressBar, { backgroundColor: colors.border }]}>
                 <View
-                  style={[s.progressFill, { width: `${pct}%` as any, backgroundColor: statusColor }]}
+                  style={[
+                    s.progressFill,
+                    {
+                      width: `${pct}%` as any,
+                      backgroundColor: statusColor,
+                    },
+                  ]}
                 />
               </View>
 
               <View style={s.statsRow}>
                 <View style={s.stat}>
-                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("history.percentage")}</Text>
-                  <Text style={[s.statValue, { color: statusColor }]}>{Math.round(pct)}%</Text>
-                </View>
-                <View style={s.stat}>
-                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("history.remaining")}</Text>
+                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>
+                    {t("history.percentage")}
+                  </Text>
                   <Text style={[s.statValue, { color: statusColor }]}>
-                    {formatAmount(TOTAL_BUDGET - cycle.total_spent)} {t("app.currency")}
+                    {Math.round(pct)}%
                   </Text>
                 </View>
                 <View style={s.stat}>
-                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>{t("history.max")}</Text>
+                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>
+                    {t("history.remaining")}
+                  </Text>
+                  <Text style={[s.statValue, { color: statusColor }]}>
+                    {formatNumber(budget - cycle.total_spent, dir.locale)}{" "}
+                    {t("app.currency")}
+                  </Text>
+                </View>
+                <View style={s.stat}>
+                  <Text style={[s.statLabel, { color: colors.mutedForeground }]}>
+                    {t("history.max")}
+                  </Text>
                   <Text style={[s.statValue, { color: colors.mutedForeground }]}>
-                    {formatAmount(TOTAL_BUDGET)} {t("app.currency")}
+                    {formatNumber(budget, dir.locale)} {t("app.currency")}
                   </Text>
                 </View>
               </View>
@@ -327,7 +410,10 @@ export default function HistoryScreen() {
           <View
             style={[
               s.modalSheet,
-              { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 },
+              {
+                backgroundColor: colors.card,
+                paddingBottom: insets.bottom + 24,
+              },
             ]}
           >
             <View style={s.modalHandle} />
@@ -338,42 +424,95 @@ export default function HistoryScreen() {
               </Text>
               <Text style={[s.modalSubtitle, { color: colors.mutedForeground }]}>
                 {selectedCycle
-                  ? `${formatDateAr(selectedCycle.start_date)} – ${formatDateAr(selectedCycle.end_date)}`
+                  ? `${formatShortDate(selectedCycle.start_date, dir.locale)} – ${formatShortDate(selectedCycle.end_date, dir.locale)}`
                   : ""}
               </Text>
             </View>
 
             {loadingDetail ? (
-              <Text style={[s.loadingText, { color: colors.mutedForeground }]}>{t("app.loading")}</Text>
+              <Text
+                style={[s.loadingText, { color: colors.mutedForeground }]}
+              >
+                {t("app.loading")}
+              </Text>
             ) : (
               <>
                 {(() => {
                   const summary = getCycleSummary(selectedExpenses, monthlyBudget);
                   const hasSurplus = summary.surplus !== null;
-                  const isSurplus = hasSurplus && (summary.surplus as number) >= 0;
+                  const isSurplus =
+                    hasSurplus && (summary.surplus as number) >= 0;
                   return (
-                    <View style={[s.summaryBox, { backgroundColor: colors.secondary }]}>
+                    <View
+                      style={[
+                        s.summaryBox,
+                        { backgroundColor: colors.secondary },
+                      ]}
+                    >
                       <View style={s.summaryItem}>
-                        <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
-                          {!hasSurplus ? t("history.surplus_deficit") : isSurplus ? t("history.surplus") : t("history.deficit")}
+                        <Text
+                          style={[
+                            s.summaryLabel,
+                            { color: colors.mutedForeground },
+                          ]}
+                        >
+                          {!hasSurplus
+                            ? t("history.surplus_deficit")
+                            : isSurplus
+                            ? t("history.surplus")
+                            : t("history.deficit")}
                         </Text>
-                        <Text style={[s.summaryValue, { color: !hasSurplus ? colors.mutedForeground : isSurplus ? colors.success : colors.destructive }]}>
-                          {!hasSurplus ? "—" : `${isSurplus ? "+" : ""}${formatAmount(summary.surplus as number)} ${t("app.currency")}`}
+                        <Text
+                          style={[
+                            s.summaryValue,
+                            {
+                              color: !hasSurplus
+                                ? colors.mutedForeground
+                                : isSurplus
+                                ? colors.success
+                                : colors.destructive,
+                            },
+                          ]}
+                        >
+                          {!hasSurplus
+                            ? "—"
+                            : `${isSurplus ? "+" : ""}${formatNumber(
+                                summary.surplus as number,
+                                dir.locale
+                              )} ${t("app.currency")}`}
                         </Text>
                       </View>
                       <View style={s.summaryItem}>
-                        <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
+                        <Text
+                          style={[
+                            s.summaryLabel,
+                            { color: colors.mutedForeground },
+                          ]}
+                        >
                           {t("history.daily_average")}
                         </Text>
-                        <Text style={[s.summaryValue, { color: colors.foreground }]}>
-                          {formatAmount(summary.dailyAverage)} {t("app.currency")}
+                        <Text
+                          style={[
+                            s.summaryValue,
+                            { color: colors.foreground },
+                          ]}
+                        >
+                          {formatNumber(summary.dailyAverage, dir.locale)}{" "}
+                          {t("app.currency")}
                         </Text>
                       </View>
                       <View style={s.summaryItem}>
-                        <Text style={[s.summaryLabel, { color: colors.mutedForeground }]}>
+                        <Text
+                          style={[
+                            s.summaryLabel,
+                            { color: colors.mutedForeground },
+                          ]}
+                        >
                           {t("history.zero_days")}
                         </Text>
-                        <Text style={[s.summaryValue, { color: colors.success }]}>
+                        <Text
+                          style={[s.summaryValue, { color: colors.success }]}
+                        >
                           {summary.zeroDays}
                         </Text>
                       </View>
@@ -381,9 +520,15 @@ export default function HistoryScreen() {
                   );
                 })()}
 
-                <ScrollView style={s.modalScroll} showsVerticalScrollIndicator={false}>
+                <ScrollView
+                  style={s.modalScroll}
+                  showsVerticalScrollIndicator={false}
+                >
                   {selectedExpenses.map((day) => {
-                    const overDay = day.amount > DAILY_BUDGET;
+                    const overDay =
+                      monthlyBudget > 0
+                        ? day.amount > monthlyBudget / 30
+                        : false;
                     const amtColor =
                       day.amount === 0
                         ? colors.mutedForeground
@@ -394,18 +539,30 @@ export default function HistoryScreen() {
                     return (
                       <View
                         key={day.date}
-                        style={[s.dayRow, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+                        style={[
+                          s.dayRow,
+                          {
+                            backgroundColor: colors.secondary,
+                            borderColor: colors.border,
+                          },
+                        ]}
                       >
                         <View>
                           <Text style={[s.dayName, { color: colors.foreground }]}>
-                            {getDayNameAr(day.date)}
+                            {getDayName(day.date, dir.locale)}
                           </Text>
-                          <Text style={[s.dayDate, { color: colors.mutedForeground }]}>
-                            {formatDateAr(day.date)}
+                          <Text
+                            style={[
+                              s.dayDate,
+                              { color: colors.mutedForeground },
+                            ]}
+                          >
+                            {formatShortDate(day.date, dir.locale)}
                           </Text>
                         </View>
                         <Text style={[s.dayAmount, { color: amtColor }]}>
-                          {formatAmount(day.amount)} {t("app.currency")}
+                          {formatNumber(day.amount, dir.locale)}{" "}
+                          {t("app.currency")}
                         </Text>
                       </View>
                     );
@@ -418,7 +575,9 @@ export default function HistoryScreen() {
               style={[s.closeBtn, { backgroundColor: colors.secondary }]}
               onPress={closeDetail}
             >
-              <Text style={[s.closeBtnText, { color: colors.foreground }]}>{t("app.close")}</Text>
+              <Text style={[s.closeBtnText, { color: colors.foreground }]}>
+                {t("app.close")}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
