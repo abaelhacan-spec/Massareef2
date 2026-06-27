@@ -32,7 +32,7 @@ export function useDirection(): DirectionValues {
 
   return {
     textAlign: isRTL ? "right" : "left",
-    flexRow: isRTL ? "row" : "row-reverse",
+   flexRow: isRTL ? "row-reverse" : "row", 
     alignStart: isRTL ? "flex-end" : "flex-start",
     alignEnd: isRTL ? "flex-start" : "flex-end",
     alignSelf: isRTL ? "flex-end" : "flex-start",
