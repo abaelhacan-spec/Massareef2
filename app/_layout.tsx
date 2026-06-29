@@ -23,6 +23,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { initLanguage } from "@/lib/i18n";
+import { initCurrency } from "@/lib/useCurrency";
 import { useLanguage } from "@/lib/useLanguage";
 import { getAppLockEnabled, initDB } from "@/lib/database";
 import { initNotifications } from "@/lib/notifications";
@@ -51,6 +52,7 @@ export default function RootLayout() {
   const [authState, setAuthState] = useState<"loading" | "authenticated" | "locked">("loading");
   const [fontTimeout, setFontTimeout] = useState(false);
   const [languageReady, setLanguageReady] = useState(false);
+  const [currencyReady, setCurrencyReady] = useState(false);
   const fontTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Safety: proceed after 4 s even if fonts haven't resolved (avoids eternal white screen on web)
@@ -64,6 +66,12 @@ export default function RootLayout() {
   useEffect(() => {
     initDB().catch(() => {});
     initNotifications().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    initCurrency()
+      .catch(() => {})
+      .finally(() => setCurrencyReady(true));
   }, []);
 
   useEffect(() => {
@@ -129,7 +137,7 @@ export default function RootLayout() {
     }
   }
 
-  if (!languageReady) return null;
+  if (!languageReady || !currencyReady) return null;
   if (!fontsLoaded && !fontError && !fontTimeout) return null;
 
   if (authState === "loading") {
