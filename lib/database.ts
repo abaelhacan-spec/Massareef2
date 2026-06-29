@@ -1,6 +1,8 @@
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { CURRENCY_KEY, DEFAULT_CURRENCY } from "./useCurrency";
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -34,6 +36,7 @@ export interface BackupData {
   settings: Record<string, string>;
   cycles: Cycle[];
   expenses: DayExpense[];
+  currency?: string; // رمز العملة المختارة (اختياري للتوافق مع النسخ القديمة)
 }
 
 export async function initDB(): Promise<void> {
@@ -249,12 +252,15 @@ export async function exportBackup(): Promise<BackupData> {
     `SELECT * FROM expenses ORDER BY cycle_id ASC, date ASC`
   );
 
+  const currency = (await AsyncStorage.getItem(CURRENCY_KEY)) ?? DEFAULT_CURRENCY;
+
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
     settings: Object.fromEntries(settings.map((s) => [s.key, s.value])),
     cycles,
     expenses,
+    currency,
   };
 }
 
@@ -292,6 +298,11 @@ export async function importBackup(backup: BackupData): Promise<void> {
       );
     }
   });
+
+  // استعادة العملة من النسخة الاحتياطية (إن وُجدت)
+  if (backup.currency) {
+    await AsyncStorage.setItem(CURRENCY_KEY, backup.currency);
+  }
 }
 
 export async function saveBackupToFile(backup: BackupData): Promise<string> {
