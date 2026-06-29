@@ -31,14 +31,20 @@ export function useLanguage() {
         await Updates.reloadAsync();
       } catch {
         // في بيئة التطوير reloadAsync لا تعمل — نطلب من المستخدم إعادة التشغيل يدوياً
-        const msg = nextIsRTL
+        // نختار الرسالة بناءً على اللغة الجديدة المختارة
+        const isNextAr = lang === "ar";
+        const isNextFr = lang === "fr";
+        const title = isNextAr
+          ? "إعادة تشغيل مطلوبة"
+          : isNextFr
+          ? "Redémarrage requis"
+          : "Restart Required";
+        const msg = isNextAr
           ? "يرجى إعادة تشغيل التطبيق لتطبيق اتجاه الكتابة الجديد."
+          : isNextFr
+          ? "Veuillez redémarrer l'application pour appliquer la nouvelle direction."
           : "Please restart the app to apply the new layout direction.";
-        Alert.alert(
-          nextIsRTL ? "إعادة تشغيل مطلوبة" : "Restart Required",
-          msg,
-          [{ text: "OK" }]
-        );
+        Alert.alert(title, msg, [{ text: "OK" }]);
       }
     }
   };
