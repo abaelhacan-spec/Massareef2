@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useLanguage } from "@/lib/useLanguage";
 import { useDirection } from "@/hooks/useDirection";
+import { useCurrency } from "@/lib/useCurrency";
 import {
   type Cycle,
   type DayExpense,
@@ -34,6 +35,7 @@ export default function HistoryScreen() {
   const colors = useColors();
   const { t } = useLanguage();
   const dir = useDirection();
+  const { currency } = useCurrency();
   const insets = useSafeAreaInsets();
   const [cycles, setCycles] = useState<(Cycle & { total_spent: number })[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,8 +49,9 @@ export default function HistoryScreen() {
   const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
 
   const loadCycles = useCallback(async () => {
-    const data = await getAllCycles();
+    const [data, monthly] = await Promise.all([getAllCycles(), getMonthlyBudget()]);
     setCycles(data);
+    setMonthlyBudgetState(monthly);
   }, []);
 
   useEffect(() => {
@@ -312,7 +315,7 @@ export default function HistoryScreen() {
                     },
                   ]}
                 >
-                  {formatNumber(cycle.total_spent, dir.locale)} {t("app.currency")}
+                  {formatNumber(cycle.total_spent, dir.locale)} {currency}
                 </Text>
                 <View style={s.nameRow}>
                   {isActive && (
@@ -374,7 +377,7 @@ export default function HistoryScreen() {
                   </Text>
                   <Text style={[s.statValue, { color: statusColor }]}>
                     {formatNumber(budget - cycle.total_spent, dir.locale)}{" "}
-                    {t("app.currency")}
+                    {currency}
                   </Text>
                 </View>
                 <View style={s.stat}>
@@ -382,7 +385,7 @@ export default function HistoryScreen() {
                     {t("history.max")}
                   </Text>
                   <Text style={[s.statValue, { color: colors.mutedForeground }]}>
-                    {formatNumber(budget, dir.locale)} {t("app.currency")}
+                    {formatNumber(budget, dir.locale)} {currency}
                   </Text>
                 </View>
               </View>
@@ -479,7 +482,7 @@ export default function HistoryScreen() {
                             : `${isSurplus ? "+" : ""}${formatNumber(
                                 summary.surplus as number,
                                 dir.locale
-                              )} ${t("app.currency")}`}
+                              )} ${currency}`}
                         </Text>
                       </View>
                       <View style={s.summaryItem}>
@@ -498,7 +501,7 @@ export default function HistoryScreen() {
                           ]}
                         >
                           {formatNumber(summary.dailyAverage, dir.locale)}{" "}
-                          {t("app.currency")}
+                          {currency}
                         </Text>
                       </View>
                       <View style={s.summaryItem}>
@@ -562,7 +565,7 @@ export default function HistoryScreen() {
                         </View>
                         <Text style={[s.dayAmount, { color: amtColor }]}>
                           {formatNumber(day.amount, dir.locale)}{" "}
-                          {t("app.currency")}
+                          {currency}
                         </Text>
                       </View>
                     );
