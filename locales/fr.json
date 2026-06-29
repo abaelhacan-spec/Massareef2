@@ -111,7 +111,9 @@
     "last_backup": "Dernière sauvegarde",
     "monthly_auto_note": "Le plafond mensuel est calculé automatiquement (journalier × 30) et peut être modifié manuellement.",
     "auto_calculated_note": "Calculé automatiquement ({{daily}} × 30)",
-    "cycle_change_note": "Ce changement sera appliqué uniquement à la prochaine période."
+    "cycle_change_note": "Ce changement sera appliqué uniquement à la prochaine période.",
+    "currency_select": "Choisir la devise",
+    "currency_search": "Rechercher une devise..."
   },
   "onboarding": {
     "title": "Commencez à gérer vos dépenses",
