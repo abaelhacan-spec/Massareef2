@@ -49,6 +49,8 @@ import {
   setMonthlyBudget,
 } from "@/lib/database";
 import { formatNumber } from "@/lib/budget";
+import { CurrencyPickerModal } from "@/components/CurrencyPickerModal";
+import { useCurrency } from "@/lib/useCurrency";
 
 const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
 
@@ -77,11 +79,13 @@ export default function SettingsScreen() {
   const colors = useColors();
   const { t, language, changeLanguage } = useLanguage();
   const dir = useDirection();
+  const { currency, setCurrency } = useCurrency();
   const insets = useSafeAreaInsets();
 
   const [cycleStartDay, setCycleStartDayState] = useState(6);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [langPickerVisible, setLangPickerVisible] = useState(false);
+  const [currencyPickerVisible, setCurrencyPickerVisible] = useState(false);
   const [appLockEnabled, setAppLockEnabledState] = useState(false);
   const [dailyBudget, setDailyBudgetState] = useState(0);
   const [monthlyBudget, setMonthlyBudgetState] = useState(0);
@@ -507,7 +511,7 @@ export default function SettingsScreen() {
     currencyLabel: {
       fontSize: 14,
       fontFamily: "Inter_500Medium",
-      marginLeft: 8,
+      marginStart: 8,
     },
     autoNote: {
       fontSize: 11,
@@ -572,7 +576,7 @@ export default function SettingsScreen() {
               <Feather name={chevron} size={16} color={colors.mutedForeground} />
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
                 {dailyBudget > 0
-                  ? `${formatNumber(dailyBudget, dir.locale)} ${t("app.currency")}`
+                  ? `${formatNumber(dailyBudget, dir.locale)} ${currency}`
                   : t("app.undefined")}
               </Text>
             </View>
@@ -595,7 +599,7 @@ export default function SettingsScreen() {
               <Feather name={chevron} size={16} color={colors.mutedForeground} />
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
                 {monthlyBudget > 0
-                  ? `${formatNumber(monthlyBudget, dir.locale)} ${t("app.currency")}`
+                  ? `${formatNumber(monthlyBudget, dir.locale)} ${currency}`
                   : t("app.undefined")}
               </Text>
             </View>
@@ -636,15 +640,15 @@ export default function SettingsScreen() {
           {t("settings.currency_and_language")}
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <TouchableOpacity style={s.row} activeOpacity={1} disabled>
+          <TouchableOpacity
+            style={s.row}
+            activeOpacity={0.6}
+            onPress={() => setCurrencyPickerVisible(true)}
+          >
             <View style={s.rowRight}>
-              <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
-                <Text style={[s.soonText, { color: colors.mutedForeground }]}>
-                  {t("app.soon")}
-                </Text>
-              </View>
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {t("app.currency_dzd")}
+                {currency}
               </Text>
             </View>
             <View style={s.rowLeft}>
@@ -984,7 +988,7 @@ export default function SettingsScreen() {
                   autoFocus
                 />
                 <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>
-                  {t("app.currency")}
+                  {currency}
                 </Text>
               </View>
             </View>
@@ -1012,7 +1016,7 @@ export default function SettingsScreen() {
                   textAlign={dir.textAlign}
                 />
                 <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>
-                  {t("app.currency")}
+                  {currency}
                 </Text>
               </View>
               {!monthlyEditedManually && dailyInput.length > 0 && (
@@ -1179,6 +1183,12 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal: اختيار العملة */}
+      <CurrencyPickerModal
+        visible={currencyPickerVisible}
+        onClose={() => setCurrencyPickerVisible(false)}
+      />
     </View>
   );
 }
