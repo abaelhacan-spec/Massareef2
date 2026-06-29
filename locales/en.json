@@ -111,7 +111,9 @@
     "last_backup": "Last backup",
     "monthly_auto_note": "Monthly limit is auto-calculated (daily × 30) and can be edited manually.",
     "auto_calculated_note": "Auto-calculated ({{daily}} × 30)",
-    "cycle_change_note": "This change will only apply to the next cycle."
+    "cycle_change_note": "This change will only apply to the next cycle.",
+    "currency_select": "Select Currency",
+    "currency_search": "Search currency..."
   },
   "onboarding": {
     "title": "Start managing your expenses",
