@@ -32,7 +32,9 @@ export function useDirection(): DirectionValues {
 
   return {
     textAlign: isRTL ? "right" : "left",
-   flexRow: isRTL ? "row-reverse" : "row", 
+    // I18nManager.forceRTL() already mirrors "row" automatically,
+    // so we must NOT override it with "row-reverse" (that would flip twice).
+    flexRow: "row",
     alignStart: isRTL ? "flex-end" : "flex-start",
     alignEnd: isRTL ? "flex-start" : "flex-end",
     alignSelf: isRTL ? "flex-end" : "flex-start",
