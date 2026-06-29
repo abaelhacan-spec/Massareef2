@@ -70,6 +70,7 @@ export interface CloudBackupDoc {
   version: number;
   exportedAt: string;
   uploadedAt: string;
+  currency?: string; // رمز العملة المختارة
   settings: Record<string, string>;
   cycles: Array<{
     id: number;
