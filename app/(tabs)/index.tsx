@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useLanguage } from "@/lib/useLanguage";
 import { useDirection } from "@/hooks/useDirection";
+import { useCurrency } from "@/lib/useCurrency";
 import {
   type Cycle,
   type DayExpense,
@@ -162,6 +163,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const { t } = useLanguage();
   const dir = useDirection();
+  const { currency } = useCurrency();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -477,7 +479,7 @@ export default function HomeScreen() {
     currencyLabel: {
       fontSize: 18,
       fontFamily: "Inter_500Medium",
-      marginLeft: 8,
+      marginStart: 8,
     },
     quickAmounts: {
       flexDirection: "row",
@@ -560,7 +562,7 @@ export default function HomeScreen() {
                   {t("home.total_spent")}
                 </Text>
                 <Text style={[s.statValue, { color: colors.foreground }]}>
-                  {formatNumber(stats.totalSpent, dir.locale)} {t("app.currency")}
+                  {formatNumber(stats.totalSpent, dir.locale)} {currency}
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: colors.secondary }]}>
@@ -568,7 +570,7 @@ export default function HomeScreen() {
                   {t("home.allowed_so_far")}
                 </Text>
                 <Text style={[s.statValue, { color: colors.mutedForeground }]}>
-                  {formatNumber(stats.allowedSoFar, dir.locale)} {t("app.currency")}
+                  {formatNumber(stats.allowedSoFar, dir.locale)} {currency}
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: statusBg }]}>
@@ -577,7 +579,7 @@ export default function HomeScreen() {
                 </Text>
                 <Text style={[s.statValue, { color: statusColor }]}>
                   {stats.difference >= 0 ? "+" : ""}
-                  {formatNumber(stats.difference, dir.locale)} {t("app.currency")}
+                  {formatNumber(stats.difference, dir.locale)} {currency}
                 </Text>
               </View>
               <View style={[s.statBox, { backgroundColor: colors.secondary }]}>
@@ -595,7 +597,7 @@ export default function HomeScreen() {
                     },
                   ]}
                 >
-                  {formatNumber(stats.remaining, dir.locale)} {t("app.currency")}
+                  {formatNumber(stats.remaining, dir.locale)} {currency}
                 </Text>
               </View>
             </View>
@@ -604,7 +606,7 @@ export default function HomeScreen() {
               <View style={s.progressRow}>
                 <Text style={[s.progressLabelSm, { color: colors.mutedForeground }]}>
                   {monthlyBudget > 0
-                    ? `${formatNumber(monthlyBudget, dir.locale)} ${t("app.currency")}`
+                    ? `${formatNumber(monthlyBudget, dir.locale)} ${currency}`
                     : t("app.undefined")}
                 </Text>
                 <Text style={[s.progressLabel, { color: colors.mutedForeground }]}>
@@ -632,7 +634,7 @@ export default function HomeScreen() {
           <View style={s.sectionHeader}>
             <Text style={[s.sectionSub, { color: colors.mutedForeground }]}>
               {dailyBudget > 0
-                ? `${formatNumber(dailyBudget, dir.locale)} ${t("app.currency")} / ${t("home.day")}`
+                ? `${formatNumber(dailyBudget, dir.locale)} ${currency} / ${t("home.day")}`
                 : t("home.no_limit_set")}
             </Text>
             <Text style={[s.sectionTitle, { color: colors.foreground }]}>
@@ -731,7 +733,7 @@ export default function HomeScreen() {
                 />
                 <Text style={[s.dayAmount, { color: amtColor }]}>
                   {day.is_entered
-                    ? `${formatNumber(day.amount, dir.locale)} ${t("app.currency")}`
+                    ? `${formatNumber(day.amount, dir.locale)} ${currency}`
                     : t("home.empty_amount")}
                 </Text>
               </View>
@@ -787,11 +789,11 @@ export default function HomeScreen() {
                 selectTextOnFocus
               />
               <Text style={[s.currencyLabel, { color: colors.mutedForeground }]}>
-                {t("app.currency")}
+                {currency}
               </Text>
               <TouchableOpacity
                 onPress={() => setCalcVisible(true)}
-                style={{ marginLeft: 8 }}
+                style={{ marginStart: 8 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons
