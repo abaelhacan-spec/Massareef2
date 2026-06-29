@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useLanguage } from "@/lib/useLanguage";
 import { useDirection } from "@/hooks/useDirection";
+import { useCurrency } from "@/lib/useCurrency";
 import { formatNumber } from "@/lib/budget";
 
 interface CalcModalProps {
@@ -33,6 +34,7 @@ export function CalcModal({
   const colors = useColors();
   const { t } = useLanguage();
   const dir = useDirection();
+  const { currency } = useCurrency();
   const insets = useSafeAreaInsets();
 
   const [input, setInput] = useState("");
@@ -142,7 +144,7 @@ export function CalcModal({
       fontSize: 14,
       fontFamily: "Inter_500Medium",
       color: colors.mutedForeground,
-      marginLeft: 6,
+      marginStart: 6,
     },
     addBtn: {
       width: 48,
@@ -269,7 +271,7 @@ export function CalcModal({
                 onSubmitEditing={handleAdd}
                 autoFocus
               />
-              <Text style={s.currency}>{t("app.currency")}</Text>
+              <Text style={s.currency}>{currency}</Text>
             </View>
           </View>
 
@@ -283,7 +285,7 @@ export function CalcModal({
               items.map((item, index) => (
                 <View key={index} style={s.itemRow}>
                   <Text style={s.itemText}>
-                    {formatNumber(item, dir.locale)} {t("app.currency")}
+                    {formatNumber(item, dir.locale)} {currency}
                   </Text>
                 </View>
               ))
@@ -295,7 +297,7 @@ export function CalcModal({
             {dir.isRTL ? (
               <>
                 <Text style={s.totalValue}>
-                  {formatNumber(total, dir.locale)} {t("app.currency")}
+                  {formatNumber(total, dir.locale)} {currency}
                 </Text>
                 <Text style={s.totalLabel}>{t("calc.total")}</Text>
               </>
@@ -303,7 +305,7 @@ export function CalcModal({
               <>
                 <Text style={s.totalLabel}>{t("calc.total")}</Text>
                 <Text style={s.totalValue}>
-                  {formatNumber(total, dir.locale)} {t("app.currency")}
+                  {formatNumber(total, dir.locale)} {currency}
                 </Text>
               </>
             )}
