@@ -10,7 +10,9 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Svg,
 } from "react-native";
+import Svg2, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
@@ -30,6 +32,72 @@ import {
   formatShortDate,
   formatNumber,
 } from "@/lib/budget";
+
+// ── Circular Progress Component ──────────────────────────────────────────────
+function CircularProgress({
+  pct,
+  color,
+  size = 80,
+  strokeWidth = 7,
+  label,
+  sublabel,
+}: {
+  pct: number;
+  color: string;
+  size?: number;
+  strokeWidth?: number;
+  label: string;
+  sublabel: string;
+}) {
+  const r = (size - strokeWidth) / 2;
+  const circ = 2 * Math.PI * r;
+  const progress = circ - (Math.min(100, pct) / 100) * circ;
+
+  return (
+    <View style={{ alignItems: "center", gap: 6 }}>
+      <Svg2 width={size} height={size}>
+        {/* track */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke="#334155"
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        {/* fill */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${circ} ${circ}`}
+          strokeDashoffset={progress}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${size / 2}, ${size / 2}`}
+        />
+      </Svg2>
+      <Text style={{ color, fontSize: 13, fontFamily: "Inter_700Bold" }}>
+        {label}
+      </Text>
+      <Text
+        style={{
+          color: "#94A3B8",
+          fontSize: 11,
+          fontFamily: "Inter_400Regular",
+          textAlign: "center",
+        }}
+      >
+        {sublabel}
+      </Text>
+    </View>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 export default function HistoryScreen() {
   const colors = useColors();
@@ -83,12 +151,23 @@ export default function HistoryScreen() {
 
   function getCycleSummary(
     expenses: DayExpense[],
-    monthlyBudgetValue: number
+    monthlyBudgetValue: number,
+    cycleEndDate: string
   ) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // ✅ FIX: only count past days (up to today) as zero-spending days
+    const pastExpenses = expenses.filter((d) => {
+      const day = new Date(d.date);
+      day.setHours(0, 0, 0, 0);
+      return day <= today;
+    });
+
     const total = expenses.reduce((sum, d) => sum + d.amount, 0);
-    const zeroDays = expenses.filter((d) => d.amount === 0).length;
-    const totalDays = expenses.length;
-    const dailyAverage = totalDays > 0 ? total / totalDays : 0;
+    const zeroDays = pastExpenses.filter((d) => d.amount === 0).length;
+    const totalPastDays = pastExpenses.length;
+    const dailyAverage = totalPastDays > 0 ? total / totalPastDays : 0;
     const surplus = monthlyBudgetValue > 0 ? monthlyBudgetValue - total : null;
     return { total, zeroDays, dailyAverage, surplus };
   }
@@ -150,8 +229,6 @@ export default function HistoryScreen() {
       textAlign: dir.textAlign,
       marginBottom: 10,
     },
-    progressBar: { height: 6, borderRadius: 3, overflow: "hidden", marginBottom: 10 },
-    progressFill: { height: "100%", borderRadius: 3 },
     statsRow: { flexDirection: "row", justifyContent: "space-between" },
     stat: { alignItems: dir.alignSelf },
     statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
@@ -174,7 +251,7 @@ export default function HistoryScreen() {
       borderTopRightRadius: 24,
       paddingTop: 12,
       paddingHorizontal: 20,
-      maxHeight: "80%",
+      maxHeight: "85%",
     },
     modalHandle: {
       width: 36,
@@ -184,7 +261,7 @@ export default function HistoryScreen() {
       alignSelf: "center",
       marginBottom: 16,
     },
-    modalHeader: { marginBottom: 12 },
+    modalHeader: { marginBottom: 16, alignItems: dir.alignSelf },
     modalTitle: {
       fontSize: 20,
       fontFamily: "Inter_700Bold",
@@ -196,7 +273,15 @@ export default function HistoryScreen() {
       textAlign: dir.textAlign,
       marginTop: 2,
     },
-    modalScroll: { maxHeight: 420 },
+    circleRow: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      alignItems: "center",
+      marginBottom: 18,
+      paddingVertical: 16,
+      borderRadius: 14,
+    },
+    modalScroll: { maxHeight: 380 },
     dayRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -231,31 +316,6 @@ export default function HistoryScreen() {
       paddingVertical: 30,
       fontSize: 14,
       fontFamily: "Inter_400Regular",
-    },
-    summaryBox: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      borderRadius: 12,
-      padding: 12,
-      marginBottom: 14,
-      gap: 8,
-    },
-    summaryItem: { flex: 1, alignItems: "center", gap: 4 },
-    summaryLabel: {
-      fontSize: 11,
-      fontFamily: "Inter_400Regular",
-      textAlign: "center",
-    },
-    summaryValue: {
-      fontSize: 14,
-      fontFamily: "Inter_700Bold",
-      textAlign: "center",
-    },
-    summarySub: {
-      fontSize: 10,
-      fontFamily: "Inter_400Regular",
-      marginTop: 1,
-      textAlign: "center",
     },
   });
 
@@ -292,7 +352,6 @@ export default function HistoryScreen() {
         {cycles.map((cycle, index) => {
           const budget = monthlyBudget > 0 ? monthlyBudget : TOTAL_BUDGET;
           const isOver = cycle.total_spent > budget;
-          const pct = Math.min(100, (cycle.total_spent / budget) * 100);
           const statusColor = isOver ? colors.destructive : colors.success;
           const isActive = index === 0 && cycle.is_locked === 0;
 
@@ -350,25 +409,14 @@ export default function HistoryScreen() {
                 {formatShortDate(cycle.end_date, dir.locale)}
               </Text>
 
-              <View style={[s.progressBar, { backgroundColor: colors.border }]}>
-                <View
-                  style={[
-                    s.progressFill,
-                    {
-                      width: `${pct}%` as any,
-                      backgroundColor: statusColor,
-                    },
-                  ]}
-                />
-              </View>
-
+              {/* ── Stats (no progress bar) ── */}
               <View style={s.statsRow}>
                 <View style={s.stat}>
                   <Text style={[s.statLabel, { color: colors.mutedForeground }]}>
                     {t("history.percentage")}
                   </Text>
                   <Text style={[s.statValue, { color: statusColor }]}>
-                    {Math.round(pct)}%
+                    {Math.round(Math.min(100, (cycle.total_spent / budget) * 100))}%
                   </Text>
                 </View>
                 <View style={s.stat}>
@@ -441,84 +489,64 @@ export default function HistoryScreen() {
             ) : (
               <>
                 {(() => {
-                  const summary = getCycleSummary(selectedExpenses, monthlyBudget);
+                  const budget = monthlyBudget > 0 ? monthlyBudget : TOTAL_BUDGET;
+                  const summary = getCycleSummary(
+                    selectedExpenses,
+                    budget,
+                    selectedCycle?.end_date ?? ""
+                  );
+                  const pct = budget > 0
+                    ? Math.min(100, (( selectedCycle?.total_spent ?? 0) / budget) * 100)
+                    : 0;
+                  const isOver = (selectedCycle?.total_spent ?? 0) > budget;
+                  const statusColor = isOver ? colors.destructive : colors.success;
                   const hasSurplus = summary.surplus !== null;
-                  const isSurplus =
-                    hasSurplus && (summary.surplus as number) >= 0;
+                  const isSurplus = hasSurplus && (summary.surplus as number) >= 0;
+
                   return (
                     <View
                       style={[
-                        s.summaryBox,
+                        s.circleRow,
                         { backgroundColor: colors.secondary },
                       ]}
                     >
-                      <View style={s.summaryItem}>
-                        <Text
-                          style={[
-                            s.summaryLabel,
-                            { color: colors.mutedForeground },
-                          ]}
-                        >
-                          {!hasSurplus
+                      {/* Circle 1: budget usage % */}
+                      <CircularProgress
+                        pct={pct}
+                        color={statusColor}
+                        label={`${Math.round(pct)}%`}
+                        sublabel={t("history.percentage")}
+                      />
+
+                      {/* Circle 2: surplus / deficit */}
+                      <CircularProgress
+                        pct={hasSurplus ? Math.min(100, Math.abs(((summary.surplus as number) / budget) * 100)) : 0}
+                        color={!hasSurplus ? colors.mutedForeground : isSurplus ? colors.success : colors.destructive}
+                        label={
+                          !hasSurplus
+                            ? "—"
+                            : `${isSurplus ? "+" : ""}${formatNumber(summary.surplus as number, dir.locale)}`
+                        }
+                        sublabel={
+                          !hasSurplus
                             ? t("history.surplus_deficit")
                             : isSurplus
                             ? t("history.surplus")
-                            : t("history.deficit")}
-                        </Text>
-                        <Text
-                          style={[
-                            s.summaryValue,
-                            {
-                              color: !hasSurplus
-                                ? colors.mutedForeground
-                                : isSurplus
-                                ? colors.success
-                                : colors.destructive,
-                            },
-                          ]}
-                        >
-                          {!hasSurplus
-                            ? "—"
-                            : `${isSurplus ? "+" : ""}${formatNumber(
-                                summary.surplus as number,
-                                dir.locale
-                              )} ${currency}`}
-                        </Text>
-                      </View>
-                      <View style={s.summaryItem}>
-                        <Text
-                          style={[
-                            s.summaryLabel,
-                            { color: colors.mutedForeground },
-                          ]}
-                        >
-                          {t("history.daily_average")}
-                        </Text>
-                        <Text
-                          style={[
-                            s.summaryValue,
-                            { color: colors.foreground },
-                          ]}
-                        >
-                          {formatNumber(summary.dailyAverage, dir.locale)}{" "}
-                          {currency}
-                        </Text>
-                      </View>
-                      <View style={s.summaryItem}>
-                        <Text
-                          style={[
-                            s.summaryLabel,
-                            { color: colors.mutedForeground },
-                          ]}
-                        >
-                          {t("history.zero_days")}
-                        </Text>
-                        <Text
-                          style={[s.summaryValue, { color: colors.success }]}
-                        >
-                          {summary.zeroDays}
-                        </Text>
-                      </View>
+                            : t("history.deficit")
+                        }
+                      />
+
+                      {/* Circle 3: zero spending days */}
+                      <CircularProgress
+                        pct={
+                          selectedExpenses.length > 0
+                            ? (summary.zeroDays / selectedExpenses.length) * 100
+                            : 0
+                        }
+                        color={colors.primary}
+                        label={`${summary.zeroDays}`}
+                        sublabel={t("history.zero_days")}
+                      />
                     </View>
                   );
                 })()}
