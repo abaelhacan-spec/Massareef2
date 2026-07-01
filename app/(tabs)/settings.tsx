@@ -573,14 +573,6 @@ export default function SettingsScreen() {
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={s.row} activeOpacity={0.6} onPress={openBudgetModal}>
-            <View style={s.rowRight}>
-              <Feather name={chevron} size={16} color={colors.mutedForeground} />
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {dailyBudget > 0
-                  ? `${formatNumber(dailyBudget, dir.locale)} ${currency}`
-                  : t("app.undefined")}
-              </Text>
-            </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>
                 {t("settings.daily_limit")}
@@ -589,6 +581,14 @@ export default function SettingsScreen() {
                 <Feather name="calendar" size={16} color={colors.primary} />
               </View>
             </View>
+            <View style={s.rowRight}>
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {dailyBudget > 0
+                  ? `${formatNumber(dailyBudget, dir.locale)} ${currency}`
+                  : t("app.undefined")}
+              </Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -596,14 +596,6 @@ export default function SettingsScreen() {
             activeOpacity={0.6}
             onPress={openBudgetModal}
           >
-            <View style={s.rowRight}>
-              <Feather name={chevron} size={16} color={colors.mutedForeground} />
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {monthlyBudget > 0
-                  ? `${formatNumber(monthlyBudget, dir.locale)} ${currency}`
-                  : t("app.undefined")}
-              </Text>
-            </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>
                 {t("settings.monthly_limit")}
@@ -612,6 +604,14 @@ export default function SettingsScreen() {
                 <Feather name="pie-chart" size={16} color={colors.primary} />
               </View>
             </View>
+            <View style={s.rowRight}>
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {monthlyBudget > 0
+                  ? `${formatNumber(monthlyBudget, dir.locale)} ${currency}`
+                  : t("app.undefined")}
+              </Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -619,12 +619,6 @@ export default function SettingsScreen() {
             activeOpacity={0.6}
             onPress={() => setPickerVisible(true)}
           >
-            <View style={s.rowRight}>
-              <Feather name={chevron} size={16} color={colors.mutedForeground} />
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {cycleStartDay}
-              </Text>
-            </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>
                 {t("settings.cycle_start_day")}
@@ -632,6 +626,12 @@ export default function SettingsScreen() {
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="rotate-cw" size={16} color={colors.primary} />
               </View>
+            </View>
+            <View style={s.rowRight}>
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {cycleStartDay}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -646,12 +646,6 @@ export default function SettingsScreen() {
             activeOpacity={0.6}
             onPress={() => setCurrencyPickerVisible(true)}
           >
-            <View style={s.rowRight}>
-              <Feather name={chevron} size={16} color={colors.mutedForeground} />
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {currency}
-              </Text>
-            </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>
                 {t("settings.currency")}
@@ -659,6 +653,12 @@ export default function SettingsScreen() {
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="dollar-sign" size={16} color={colors.primary} />
               </View>
+            </View>
+            <View style={s.rowRight}>
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {currency}
+              </Text>
             </View>
           </TouchableOpacity>
 
@@ -668,12 +668,6 @@ export default function SettingsScreen() {
             activeOpacity={0.6}
             onPress={() => setLangPickerVisible(true)}
           >
-            <View style={s.rowRight}>
-              <Feather name={chevron} size={16} color={colors.mutedForeground} />
-              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
-                {currentLangName}
-              </Text>
-            </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>
                 {t("settings.language")}
@@ -681,6 +675,12 @@ export default function SettingsScreen() {
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="globe" size={16} color={colors.primary} />
               </View>
+            </View>
+            <View style={s.rowRight}>
+              <Feather name={chevron} size={16} color={colors.mutedForeground} />
+              <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
+                {currentLangName}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -691,12 +691,6 @@ export default function SettingsScreen() {
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={s.row}>
-            <Switch
-              value={appLockEnabled}
-              onValueChange={toggleAppLock}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.primaryForeground}
-            />
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>
                 {t("settings.app_lock")}
@@ -705,6 +699,12 @@ export default function SettingsScreen() {
                 <Feather name="lock" size={16} color={colors.primary} />
               </View>
             </View>
+            <Switch
+              value={appLockEnabled}
+              onValueChange={toggleAppLock}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.primaryForeground}
+            />
           </View>
         </View>
 
@@ -714,6 +714,14 @@ export default function SettingsScreen() {
         </Text>
         <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={s.row} activeOpacity={1} disabled>
+            <View style={s.rowLeft}>
+              <Text style={[s.rowLabel, { color: colors.foreground }]}>
+                {t("settings.daily_reminder")}
+              </Text>
+              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
+                <Feather name="bell" size={16} color={colors.primary} />
+              </View>
+            </View>
             <View style={s.rowRight}>
               <View style={[s.soonBadge, { backgroundColor: colors.secondary }]}>
                 <Text style={[s.soonText, { color: colors.mutedForeground }]}>
@@ -723,14 +731,6 @@ export default function SettingsScreen() {
               <Text style={[s.rowValue, { color: colors.mutedForeground }]}>
                 21:00
               </Text>
-            </View>
-            <View style={s.rowLeft}>
-              <Text style={[s.rowLabel, { color: colors.foreground }]}>
-                {t("settings.daily_reminder")}
-              </Text>
-              <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
-                <Feather name="bell" size={16} color={colors.primary} />
-              </View>
             </View>
           </TouchableOpacity>
         </View>
@@ -746,13 +746,6 @@ export default function SettingsScreen() {
             onPress={handleLocalExport}
             disabled={localLoading}
           >
-            <View style={s.rowRight}>
-              {localLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Feather name={chevron} size={16} color={colors.mutedForeground} />
-              )}
-            </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>
                 {t("settings.export_backup")}
@@ -760,6 +753,13 @@ export default function SettingsScreen() {
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="upload" size={16} color={colors.primary} />
               </View>
+            </View>
+            <View style={s.rowRight}>
+              {localLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Feather name={chevron} size={16} color={colors.mutedForeground} />
+              )}
             </View>
           </TouchableOpacity>
 
@@ -769,13 +769,6 @@ export default function SettingsScreen() {
             onPress={handleLocalImport}
             disabled={localLoading}
           >
-            <View style={s.rowRight}>
-              {localLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Feather name={chevron} size={16} color={colors.mutedForeground} />
-              )}
-            </View>
             <View style={s.rowLeft}>
               <Text style={[s.rowLabel, { color: colors.foreground }]}>
                 {t("settings.restore_file")}
@@ -783,6 +776,13 @@ export default function SettingsScreen() {
               <View style={[s.iconCircle, { backgroundColor: colors.secondary }]}>
                 <Feather name="download" size={16} color={colors.primary} />
               </View>
+            </View>
+            <View style={s.rowRight}>
+              {localLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Feather name={chevron} size={16} color={colors.mutedForeground} />
+              )}
             </View>
           </TouchableOpacity>
         </View>
