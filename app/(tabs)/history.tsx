@@ -31,6 +31,7 @@ import {
   getDayName,
   formatShortDate,
   formatNumber,
+  formatCycleDisplayName,
 } from "@/lib/budget";
 
 // ── Circular Progress Component ──────────────────────────────────────────────
@@ -399,7 +400,10 @@ export default function HistoryScreen() {
                     />
                   )}
                   <Text style={[s.cycleName, { color: colors.foreground }]}>
-                    {cycle.name}
+                    {formatCycleDisplayName(
+                      new Date(cycle.start_date + "T00:00:00"),
+                      dir.locale
+                    )}
                   </Text>
                 </View>
               </View>
