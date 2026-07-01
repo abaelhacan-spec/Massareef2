@@ -304,7 +304,7 @@ export default function HomeScreen() {
       backgroundColor: colors.card,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      alignItems: dir.alignSelf,
+      alignItems: "flex-start",
       paddingTop: Platform.OS === "web" ? 67 : insets.top + 12,
     },
     headerTitle: {
@@ -334,7 +334,7 @@ export default function HomeScreen() {
     statusBadge: {
       flexDirection: "row",
       alignItems: "center",
-      alignSelf: dir.alignSelf,
+      alignSelf: "flex-start",
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 20,
@@ -352,7 +352,7 @@ export default function HomeScreen() {
       borderRadius: 10,
       padding: 12,
       marginBottom: 8,
-      alignItems: dir.alignSelf,
+      alignItems: "flex-start",
     },
     statLabel: {
       fontSize: 11,
@@ -696,7 +696,7 @@ export default function HomeScreen() {
                     ]}
                   />
                 )}
-                <View style={{ alignItems: dir.alignSelf }}>
+                <View style={{ alignItems: "flex-start" }}>
                   <Text style={[s.dayName, { color: colors.foreground }]}>
                     {getDayName(day.date, dir.locale)}
                     {todayFlag ? (
