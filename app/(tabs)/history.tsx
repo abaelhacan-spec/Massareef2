@@ -180,10 +180,9 @@ export default function HistoryScreen() {
       backgroundColor: colors.card,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      alignItems: dir.alignSelf,
+      alignItems: "flex-start",
       paddingTop: Platform.OS === "web" ? 67 : insets.top + 12,
     },
-    headerTitle: {
       fontSize: 24,
       fontFamily: "Inter_700Bold",
       color: colors.foreground,
@@ -230,7 +229,7 @@ export default function HistoryScreen() {
       marginBottom: 10,
     },
     statsRow: { flexDirection: "row", justifyContent: "space-between" },
-    stat: { alignItems: dir.alignSelf },
+    stat: { alignItems: "flex-start" },
     statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
     statValue: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 2 },
     tapHint: {
@@ -261,7 +260,7 @@ export default function HistoryScreen() {
       alignSelf: "center",
       marginBottom: 16,
     },
-    modalHeader: { marginBottom: 16, alignItems: dir.alignSelf },
+    modalHeader: { marginBottom: 16, alignItems: "flex-start" },
     modalTitle: {
       fontSize: 20,
       fontFamily: "Inter_700Bold",
