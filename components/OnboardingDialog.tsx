@@ -36,7 +36,8 @@ export function OnboardingDialog() {
 
   async function handleSetBudget() {
     await dismiss();
-    router.push("/(tabs)/settings");
+    // Use replace to avoid stacking on top of tabs
+    router.replace("/(tabs)/settings");
   }
 
   if (!visible) return null;
@@ -59,7 +60,7 @@ export function OnboardingDialog() {
         >
           {/* أيقونة */}
           <View style={[styles.iconWrap, { backgroundColor: colors.secondary }]}>
-            <Feather name="trending-up" size={32} color={colors.primary} />
+            <Feather name="trending-up" size={34} color={colors.primary} />
           </View>
 
           {/* العنوان */}
@@ -72,6 +73,9 @@ export function OnboardingDialog() {
             {t("onboarding.title")}
           </Text>
 
+          {/* الفاصل */}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
           {/* النص */}
           <Text
             style={[
@@ -83,37 +87,30 @@ export function OnboardingDialog() {
           </Text>
 
           {/* الأزرار */}
-          <View style={[styles.actions, { flexDirection: dir.flexRow }]}>
-            {/* زر ثانوي — لاحقاً */}
+          <View style={styles.actions}>
+            {/* زر أساسي */}
+            <Pressable
+              style={[styles.btnPrimary, { backgroundColor: colors.primary }]}
+              onPress={handleSetBudget}
+            >
+              <Feather
+                name="sliders"
+                size={15}
+                color={colors.primaryForeground}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.btnPrimaryText, { color: colors.primaryForeground }]}>
+                {t("onboarding.set_budget")}
+              </Text>
+            </Pressable>
+
+            {/* زر ثانوي */}
             <Pressable
               style={[styles.btnSecondary, { borderColor: colors.border }]}
               onPress={dismiss}
             >
-              <Text
-                style={[
-                  styles.btnSecondaryText,
-                  { color: colors.mutedForeground },
-                ]}
-              >
+              <Text style={[styles.btnSecondaryText, { color: colors.mutedForeground }]}>
                 {t("onboarding.later")}
-              </Text>
-            </Pressable>
-
-            {/* زر أساسي — تحديد سقف الإنفاق */}
-            <Pressable
-              style={[
-                styles.btnPrimary,
-                { backgroundColor: colors.primary },
-              ]}
-              onPress={handleSetBudget}
-            >
-              <Text
-                style={[
-                  styles.btnPrimaryText,
-                  { color: colors.primaryForeground },
-                ]}
-              >
-                {t("onboarding.set_budget")}
               </Text>
             </Pressable>
           </View>
@@ -126,66 +123,74 @@ export function OnboardingDialog() {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
   },
   card: {
     width: "100%",
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 28,
     alignItems: "center",
-    gap: 16,
+    gap: 14,
     shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
   },
   iconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   title: {
-    fontSize: 20,
+    fontSize: 21,
     fontFamily: "Inter_700Bold",
     width: "100%",
+  },
+  divider: {
+    width: "100%",
+    height: 1,
+    marginVertical: 2,
   },
   body: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    lineHeight: 22,
+    lineHeight: 23,
     width: "100%",
   },
   actions: {
     width: "100%",
     gap: 10,
-    marginTop: 4,
+    marginTop: 6,
+  },
+  btnPrimary: {
+    flexDirection: "row",
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnPrimaryText: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
   },
   btnSecondary: {
-    flex: 1,
+    width: "100%",
     paddingVertical: 13,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
   },
   btnSecondaryText: {
     fontSize: 14,
     fontFamily: "Inter_500Medium",
-  },
-  btnPrimary: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  btnPrimaryText: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
   },
 });
