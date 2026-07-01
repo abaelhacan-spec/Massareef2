@@ -715,7 +715,7 @@ export default function HomeScreen() {
                   name="edit-2"
                   size={13}
                   color={colors.mutedForeground}
-                  style={{ marginRight: 6 }}
+                  style={{ marginEnd: 6 }}
                 />
                 <Text style={[s.dayAmount, { color: amtColor }]}>
                   {day.is_entered
