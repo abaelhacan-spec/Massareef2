@@ -183,6 +183,7 @@ export default function HistoryScreen() {
       alignItems: "flex-start",
       paddingTop: Platform.OS === "web" ? 67 : insets.top + 12,
     },
+    headerTitle: {
       fontSize: 24,
       fontFamily: "Inter_700Bold",
       color: colors.foreground,
