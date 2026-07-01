@@ -334,7 +334,7 @@ export default function HomeScreen() {
     statusBadge: {
       flexDirection: "row",
       alignItems: "center",
-      alignSelf: "flex-start",
+      alignSelf: "flex-start", // I18nManager يعكس هذا تلقائياً في RTL
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 20,
@@ -409,6 +409,7 @@ export default function HomeScreen() {
       alignItems: "center",
       gap: 10,
       flex: 1,
+      justifyContent: "flex-start", // I18nManager يعكس الصف تلقائياً
     },
     dayDot: { width: 8, height: 8, borderRadius: 4 },
     dayName: {
@@ -485,7 +486,7 @@ export default function HomeScreen() {
       flexDirection: "row",
       gap: 8,
       marginBottom: 20,
-      justifyContent: dir.isRTL ? "flex-end" : "flex-start",
+      justifyContent: "flex-start", // I18nManager يعكس الصف كله تلقائياً
     },
     quickBtn: {
       paddingHorizontal: 14,
@@ -681,21 +682,8 @@ export default function HomeScreen() {
               onPress={() => openDayModal(day)}
               activeOpacity={0.7}
             >
-              {/* في RTL: النص على اليمين والدوت على اليسار */}
-              <View style={[s.dayLeft, { justifyContent: dir.isRTL ? "flex-end" : "flex-start" }]}>
-                {dir.isRTL && (
-                  <View
-                    style={[
-                      s.dayDot,
-                      {
-                        backgroundColor:
-                          day.is_entered && day.amount > 0
-                            ? amtColor
-                            : colors.border,
-                      },
-                    ]}
-                  />
-                )}
+              {/* I18nManager يعكس الصف كله تلقائياً — الدوت دائماً بعد النص */}
+              <View style={s.dayLeft}>
                 <View style={{ alignItems: "flex-start" }}>
                   <Text style={[s.dayName, { color: colors.foreground }]}>
                     {getDayName(day.date, dir.locale)}
@@ -710,19 +698,17 @@ export default function HomeScreen() {
                     {formatShortDate(day.date, dir.locale)}
                   </Text>
                 </View>
-                {!dir.isRTL && (
-                  <View
-                    style={[
-                      s.dayDot,
-                      {
-                        backgroundColor:
-                          day.is_entered && day.amount > 0
-                            ? amtColor
-                            : colors.border,
-                      },
-                    ]}
-                  />
-                )}
+                <View
+                  style={[
+                    s.dayDot,
+                    {
+                      backgroundColor:
+                        day.is_entered && day.amount > 0
+                          ? amtColor
+                          : colors.border,
+                    },
+                  ]}
+                />
               </View>
               <View style={s.dayRight}>
                 <Feather

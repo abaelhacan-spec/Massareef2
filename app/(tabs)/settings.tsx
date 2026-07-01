@@ -302,7 +302,7 @@ export default function SettingsScreen() {
       backgroundColor: colors.card,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      alignItems: dir.alignSelf,
+      alignItems: "flex-start", // I18nManager يعكس هذا تلقائياً
       paddingTop: Platform.OS === "web" ? 67 : insets.top + 12,
     },
     headerTitle: {
@@ -328,12 +328,11 @@ export default function SettingsScreen() {
       textAlign: dir.textAlign,
       marginBottom: 8,
       marginTop: 18,
-      marginRight: dir.isRTL ? 4 : 0,
-      marginLeft: dir.isRTL ? 0 : 4,
+      marginStart: 4, // يتكيف تلقائياً مع RTL/LTR
     },
     card: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
     row: {
-      flexDirection: dir.flexRow,
+      flexDirection: "row", // I18nManager يعكسها تلقائياً في RTL
       alignItems: "center",
       justifyContent: "space-between",
       paddingHorizontal: 14,
@@ -378,7 +377,7 @@ export default function SettingsScreen() {
       alignItems: "center",
       justifyContent: "center",
     },
-    userInfo: { flex: 1, alignItems: dir.alignSelf },
+    userInfo: { flex: 1, alignItems: "flex-start" }, // I18nManager يعكس تلقائياً
     userName: {
       fontSize: 15,
       fontFamily: "Inter_600SemiBold",
@@ -416,7 +415,7 @@ export default function SettingsScreen() {
     cloudBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
     signOutRow: {
       flexDirection: "row",
-      justifyContent: dir.isRTL ? "flex-end" : "flex-start",
+      justifyContent: "flex-start", // I18nManager يعكس الصف تلقائياً
       paddingHorizontal: 14,
       paddingBottom: 14,
     },
@@ -475,7 +474,7 @@ export default function SettingsScreen() {
     daysGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      justifyContent: dir.isRTL ? "flex-end" : "flex-start",
+      justifyContent: "flex-start", // I18nManager يعكس الصف تلقائياً
       gap: 8,
       paddingBottom: 20,
     },
@@ -534,7 +533,7 @@ export default function SettingsScreen() {
     saveBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
     // Language picker
     langOption: {
-      flexDirection: dir.flexRow,
+      flexDirection: "row", // I18nManager يعكسها تلقائياً في RTL
       alignItems: "center",
       paddingHorizontal: 16,
       paddingVertical: 14,
