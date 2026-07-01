@@ -177,7 +177,7 @@ export function CalcModal({
     },
     itemRow: {
       flexDirection: "row",
-      justifyContent: dir.isRTL ? "flex-end" : "flex-start",
+      justifyContent: "space-between",
       paddingVertical: 4,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
@@ -294,21 +294,10 @@ export function CalcModal({
 
           {/* Total */}
           <View style={s.totalRow}>
-            {dir.isRTL ? (
-              <>
-                <Text style={s.totalValue}>
-                  {formatNumber(total, dir.locale)} {currency}
-                </Text>
-                <Text style={s.totalLabel}>{t("calc.total")}</Text>
-              </>
-            ) : (
-              <>
-                <Text style={s.totalLabel}>{t("calc.total")}</Text>
-                <Text style={s.totalValue}>
-                  {formatNumber(total, dir.locale)} {currency}
-                </Text>
-              </>
-            )}
+            <Text style={s.totalLabel}>{t("calc.total")}</Text>
+            <Text style={s.totalValue}>
+              {formatNumber(total, dir.locale)} {currency}
+            </Text>
           </View>
 
           {/* Utility Buttons */}
