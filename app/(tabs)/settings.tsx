@@ -207,6 +207,14 @@ export default function SettingsScreen() {
             const backup = await loadBackupFromFile(file.uri);
             await importBackup(backup);
             await initCurrency();
+            if (
+              backup.language &&
+              backup.language !== language &&
+              ["ar", "fr", "en"].includes(backup.language)
+            ) {
+              await changeLanguage(backup.language as SupportedLanguage);
+              // changeLanguage قد يعيد تشغيل التطبيق تلقائياً عند تغيّر الاتجاه
+            }
             Alert.alert(t("app.done"), t("settings.restore_success_file"));
           } catch (e: any) {
             Alert.alert(t("app.error"), e.message ?? t("settings.import_fail"));
@@ -277,6 +285,14 @@ export default function SettingsScreen() {
             const backup = await downloadBackupFromCloud();
             await importBackup(backup);
             await initCurrency();
+            if (
+              backup.language &&
+              backup.language !== language &&
+              ["ar", "fr", "en"].includes(backup.language)
+            ) {
+              await changeLanguage(backup.language as SupportedLanguage);
+              // changeLanguage قد يعيد تشغيل التطبيق تلقائياً عند تغيّر الاتجاه
+            }
             Alert.alert(t("app.done_check"), t("settings.restore_success"));
           } catch (e: any) {
             Alert.alert(
