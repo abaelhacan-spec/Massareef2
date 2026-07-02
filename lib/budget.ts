@@ -31,6 +31,37 @@ export function formatDate(date: Date): string {
 }
 
 // ─── دوال متعددة اللغات ──────────────────────────────────────────────────────
+//
+// ملاحظة مهمة: لا نعتمد على Intl / toLocaleDateString هنا لأن محرك Hermes
+// (المستخدم في React Native على Android) لا يتضمن بيانات ICU الكاملة
+// لكل اللغات افتراضياً، فتظل هذه الدوال ترجع النص بالإنجليزية دائماً
+// بغض النظر عن الـ locale الممرر. لذلك نستخدم جداول يدوية بدلاً من ذلك.
+
+const MONTHS_FR = [
+  "janvier", "février", "mars", "avril", "mai", "juin",
+  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+];
+
+const MONTHS_EN = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const DAYS_FR = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
+const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+const ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+
+function toArabicDigits(n: number): string {
+  return String(n).replace(/[0-9]/g, (d) => ARABIC_DIGITS[Number(d)]);
+}
+
+function langFromLocale(locale: string): "ar" | "fr" | "en" {
+  if (locale.startsWith("ar")) return "ar";
+  if (locale.startsWith("fr")) return "fr";
+  return "en";
+}
 
 /**
  * اسم اليوم بحسب اللغة المُمرَّرة (locale).
@@ -38,7 +69,11 @@ export function formatDate(date: Date): string {
  */
 export function getDayName(dateStr: string, locale: string = "ar-DZ"): string {
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString(locale, { weekday: "long" });
+  const lang = langFromLocale(locale);
+  const dayIndex = d.getDay();
+  if (lang === "ar") return DAYS_AR[dayIndex];
+  if (lang === "fr") return DAYS_FR[dayIndex];
+  return DAYS_EN[dayIndex];
 }
 
 /**
@@ -47,7 +82,12 @@ export function getDayName(dateStr: string, locale: string = "ar-DZ"): string {
  */
 export function formatShortDate(dateStr: string, locale: string = "ar-DZ"): string {
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString(locale, { day: "numeric", month: "long" });
+  const lang = langFromLocale(locale);
+  const day = d.getDate();
+  const monthIndex = d.getMonth();
+  if (lang === "ar") return `${toArabicDigits(day)} ${MONTHS_AR[monthIndex]}`;
+  if (lang === "fr") return `${day} ${MONTHS_FR[monthIndex]}`;
+  return `${MONTHS_EN[monthIndex]} ${day}`;
 }
 
 /**
@@ -55,7 +95,12 @@ export function formatShortDate(dateStr: string, locale: string = "ar-DZ"): stri
  * مثال: formatCycleDisplayName(new Date("2025-01-06"), "fr-FR") → "janvier 2025"
  */
 export function formatCycleDisplayName(startDate: Date, locale: string = "ar-DZ"): string {
-  return startDate.toLocaleDateString(locale, { month: "long", year: "numeric" });
+  const lang = langFromLocale(locale);
+  const year = startDate.getFullYear();
+  const monthIndex = startDate.getMonth();
+  if (lang === "ar") return `${MONTHS_AR[monthIndex]} ${toArabicDigits(year)}`;
+  if (lang === "fr") return `${MONTHS_FR[monthIndex]} ${year}`;
+  return `${MONTHS_EN[monthIndex]} ${year}`;
 }
 
 /**
@@ -63,7 +108,22 @@ export function formatCycleDisplayName(startDate: Date, locale: string = "ar-DZ"
  * مثال: formatNumber(1234, "ar-DZ") → "١٬٢٣٤"
  */
 export function formatNumber(n: number, locale: string = "ar-DZ"): string {
-  return Math.round(n).toLocaleString(locale);
+  const rounded = Math.round(n);
+  const lang = langFromLocale(locale);
+  const sign = rounded < 0 ? "-" : "";
+  const abs = Math.abs(rounded).toString();
+
+  if (lang === "ar") {
+    const withArabicSeparators = abs.replace(/\B(?=(\d{3})+(?!\d))/g, "٬");
+    const arabicDigitsResult = withArabicSeparators.replace(
+      /[0-9]/g,
+      (d) => ARABIC_DIGITS[Number(d)]
+    );
+    return `${sign}${arabicDigitsResult}`;
+  }
+
+  const withCommaSeparators = abs.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${sign}${withCommaSeparators}`;
 }
 
 // ─── دوال الدورة ─────────────────────────────────────────────────────────────
