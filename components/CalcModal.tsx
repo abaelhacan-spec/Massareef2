@@ -186,6 +186,7 @@ export function CalcModal({
       fontSize: 15,
       fontFamily: "Inter_500Medium",
       color: colors.foreground,
+      textAlign: dir.textAlign,
     },
     totalRow: {
       flexDirection: "row",
