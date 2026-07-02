@@ -116,9 +116,9 @@
     "currency_search": "Search currency..."
   },
   "onboarding": {
-    "title": "Start managing your expenses",
-    "body": "You can use the app to record your expenses or set a daily and monthly budget to help you stay within your spending limit.",
-    "set_budget": "Set spending limit",
+    "title": "Welcome! Let's set up your budget.",
+    "body": "Set your spending limit for this cycle, and we'll help you stay within it.",
+    "set_budget": "Let's Start",
     "later": "Later"
   },
   "auth": {

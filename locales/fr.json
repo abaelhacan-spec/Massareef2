@@ -116,9 +116,9 @@
     "currency_search": "Rechercher une devise..."
   },
   "onboarding": {
-    "title": "Commencez à gérer vos dépenses",
-    "body": "Vous pouvez utiliser l'application pour enregistrer vos dépenses ou définir un budget quotidien et mensuel pour respecter votre limite de dépenses.",
-    "set_budget": "Définir un plafond",
+    "title": "Bienvenue ! Configurons votre budget.",
+    "body": "Définissez votre limite de dépenses pour ce cycle, et nous vous aiderons à la respecter.",
+    "set_budget": "Commencer",
     "later": "Plus tard"
   },
   "auth": {
