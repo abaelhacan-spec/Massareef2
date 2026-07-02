@@ -3,6 +3,7 @@ import * as SQLite from "expo-sqlite";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CURRENCY_KEY, DEFAULT_CURRENCY } from "./useCurrency";
+import { LANGUAGE_KEY } from "./i18n";
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -37,6 +38,7 @@ export interface BackupData {
   cycles: Cycle[];
   expenses: DayExpense[];
   currency?: string; // رمز العملة المختارة (اختياري للتوافق مع النسخ القديمة)
+  language?: string; // اللغة المختارة (اختياري للتوافق مع النسخ القديمة)
 }
 
 export async function initDB(): Promise<void> {
@@ -253,6 +255,7 @@ export async function exportBackup(): Promise<BackupData> {
   );
 
   const currency = (await AsyncStorage.getItem(CURRENCY_KEY)) ?? DEFAULT_CURRENCY;
+  const language = (await AsyncStorage.getItem(LANGUAGE_KEY)) ?? undefined;
 
   return {
     version: 1,
@@ -261,6 +264,7 @@ export async function exportBackup(): Promise<BackupData> {
     cycles,
     expenses,
     currency,
+    language,
   };
 }
 
@@ -302,6 +306,13 @@ export async function importBackup(backup: BackupData): Promise<void> {
   // استعادة العملة من النسخة الاحتياطية (إن وُجدت)
   if (backup.currency) {
     await AsyncStorage.setItem(CURRENCY_KEY, backup.currency);
+  }
+
+  // استعادة اللغة من النسخة الاحتياطية (إن وُجدت)
+  // ملاحظة: لا نطبّق تغيير الاتجاه (RTL/LTR) هنا مباشرة؛ يتم ذلك عبر
+  // initLanguage() عند إعادة تشغيل التطبيق بعد الاستعادة.
+  if (backup.language) {
+    await AsyncStorage.setItem(LANGUAGE_KEY, backup.language);
   }
 }
 
