@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Localization from "expo-localization";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { I18nManager } from "react-native";
@@ -33,10 +34,12 @@ export async function initLanguage(): Promise<void> {
   try {
     const saved = await AsyncStorage.getItem(LANGUAGE_KEY);
 
-    // أول تثبيت: لا يوجد saved → الإنجليزية افتراضياً
+    // أول تثبيت: لا يوجد saved → نستخدم لغة الجهاز
     // تثبيت سابق: يستخدم اللغة المحفوظة
-    const candidate = saved ?? "en";
+    const deviceLanguageCode = Localization.getLocales()[0]?.languageCode ?? "en";
+    const candidate = saved ?? deviceLanguageCode;
 
+    // لو اللغة (محفوظة أو لغة الجهاز) غير مدعومة، نرجع للإنجليزية تلقائياً
     const resolved: SupportedLanguage = SUPPORTED_LANGUAGES.includes(
       candidate as SupportedLanguage
     )
@@ -50,6 +53,13 @@ export async function initLanguage(): Promise<void> {
     I18nManager.forceRTL(isRTL);
 
     await i18n.changeLanguage(resolved);
+
+    // نحفظ اللغة المُحلَّلة عند أول تشغيل (لم يكن هناك saved من قبل)
+    // حتى لا يتأثر التطبيق لاحقاً بتغيير لغة الجهاز، ويبقى القرار
+    // بيد المستخدم عبر الإعدادات بعد أول تشغيل.
+    if (!saved) {
+      await AsyncStorage.setItem(LANGUAGE_KEY, resolved);
+    }
   } catch (error) {
     console.warn("Failed to initialize language:", error);
 
