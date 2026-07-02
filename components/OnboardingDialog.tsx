@@ -1,8 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -58,10 +58,12 @@ export function OnboardingDialog() {
           ]}
           onPress={() => {}}
         >
-          {/* أيقونة */}
-          <View style={[styles.iconWrap, { backgroundColor: colors.secondary }]}>
-            <Feather name="trending-up" size={34} color={colors.primary} />
-          </View>
+          {/* الشعار */}
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
 
           {/* العنوان */}
           <Text
@@ -73,10 +75,7 @@ export function OnboardingDialog() {
             {t("onboarding.title")}
           </Text>
 
-          {/* الفاصل */}
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-          {/* النص */}
+          {/* الوصف */}
           <Text
             style={[
               styles.body,
@@ -93,12 +92,6 @@ export function OnboardingDialog() {
               style={[styles.btnPrimary, { backgroundColor: colors.primary }]}
               onPress={handleSetBudget}
             >
-              <Feather
-                name="sliders"
-                size={15}
-                color={colors.primaryForeground}
-                style={{ marginRight: 6 }}
-              />
               <Text style={[styles.btnPrimaryText, { color: colors.primaryForeground }]}>
                 {t("onboarding.set_budget")}
               </Text>
@@ -106,7 +99,7 @@ export function OnboardingDialog() {
 
             {/* زر ثانوي */}
             <Pressable
-              style={[styles.btnSecondary, { borderColor: colors.border }]}
+              style={styles.btnSecondary}
               onPress={dismiss}
             >
               <Text style={[styles.btnSecondaryText, { color: colors.mutedForeground }]}>
@@ -132,46 +125,41 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 24,
     borderWidth: 1,
-    padding: 28,
+    paddingVertical: 36,
+    paddingHorizontal: 28,
     alignItems: "center",
-    gap: 14,
+    gap: 16,
     shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
     elevation: 12,
   },
-  iconWrap: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 2,
+  logo: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    marginBottom: 4,
   },
   title: {
     fontSize: 21,
     fontFamily: "Inter_700Bold",
     width: "100%",
-  },
-  divider: {
-    width: "100%",
-    height: 1,
-    marginVertical: 2,
+    textAlign: "center",
   },
   body: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    lineHeight: 23,
+    lineHeight: 22,
     width: "100%",
+    textAlign: "center",
   },
   actions: {
     width: "100%",
     gap: 10,
-    marginTop: 6,
+    marginTop: 10,
   },
   btnPrimary: {
-    flexDirection: "row",
     width: "100%",
     paddingVertical: 14,
     borderRadius: 14,
@@ -186,8 +174,8 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingVertical: 13,
     borderRadius: 14,
-    borderWidth: 1,
     alignItems: "center",
+    backgroundColor: "transparent",
   },
   btnSecondaryText: {
     fontSize: 14,
